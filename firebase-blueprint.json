@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Employee user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["employee", "admin"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "name", "email", "role", "createdAt"]
+    },
+    "Permuta": {
+      "title": "Permuta",
+      "description": "Shift swap request",
+      "type": "object",
+      "properties": {
+        "requesterId": { "type": "string" },
+        "requesterName": { "type": "string" },
+        "substituteId": { "type": "string" },
+        "substituteName": { "type": "string" },
+        "date": { "type": "string" },
+        "shift": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "requesterSignedAt": { "type": "string" },
+        "substituteSignedAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["requesterId", "requesterName", "substituteId", "substituteName", "date", "shift", "status", "requesterSignedAt", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles"
+    },
+    "permutas/{permutaId}": {
+      "schema": { "$ref": "#/entities/Permuta" },
+      "description": "Stores shift swap requests"
+    }
+  }
+}

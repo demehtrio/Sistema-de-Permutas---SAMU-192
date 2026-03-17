@@ -1,0 +1,5 @@
+{
+  "name": "SAMU 192 Permutas",
+  "description": "Aplicativo para solicitação e assinatura (via GOV.BR) de permutas de plantão entre servidores do SAMU 192.",
+  "requestFramePermissions": []
+}
