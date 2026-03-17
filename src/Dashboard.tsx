@@ -89,26 +89,27 @@ export const Dashboard: React.FC = () => {
     doc.text('Dados da Permuta:', 20, 40);
     
     doc.setFontSize(10);
-    doc.text(`Motivo: ${permuta.reason || 'Não informado'}`, 20, 50);
+    doc.text(`Tipo de Unidade: ${permuta.unitType || 'Não informado'}`, 20, 50);
+    doc.text(`Motivo: ${permuta.reason || 'Não informado'}`, 20, 60);
     
-    doc.text('Solicitante:', 20, 70);
-    doc.text(`Nome: ${permuta.requesterName}`, 20, 80);
-    if (permuta.requesterRole) doc.text(`Cargo: ${permuta.requesterRole}`, 20, 90);
-    if (permuta.requesterDate) doc.text(`Data do Plantão: ${permuta.requesterDate}`, 20, 100);
-    if (permuta.requesterShift) doc.text(`Turno: ${permuta.requesterShift}`, 20, 110);
+    doc.text('Solicitante:', 20, 80);
+    doc.text(`Nome: ${permuta.requesterName}`, 20, 90);
+    if (permuta.requesterRole) doc.text(`Cargo: ${permuta.requesterRole}`, 20, 100);
+    if (permuta.requesterDate) doc.text(`Data do Plantão: ${permuta.requesterDate}`, 20, 110);
+    if (permuta.requesterShift) doc.text(`Turno: ${permuta.requesterShift}`, 20, 120);
     
-    doc.text('Substituto:', 120, 70);
-    doc.text(`Nome: ${permuta.substituteName}`, 120, 80);
-    if (permuta.substituteRole) doc.text(`Cargo: ${permuta.substituteRole}`, 120, 90);
-    doc.text(`Data do Plantão: ${permuta.date}`, 120, 100);
-    doc.text(`Turno: ${permuta.shift}`, 120, 110);
+    doc.text('Substituto:', 120, 80);
+    doc.text(`Nome: ${permuta.substituteName}`, 120, 90);
+    if (permuta.substituteRole) doc.text(`Cargo: ${permuta.substituteRole}`, 120, 100);
+    doc.text(`Data do Plantão: ${permuta.date}`, 120, 110);
+    doc.text(`Turno: ${permuta.shift}`, 120, 120);
     
-    doc.text('Status: APROVADA / ASSINADA', 105, 140, { align: 'center' });
+    doc.text('Status: APROVADA / ASSINADA', 105, 150, { align: 'center' });
     
     doc.setFontSize(8);
-    doc.text(`Solicitação criada em: ${new Date(permuta.createdAt).toLocaleString()}`, 20, 160);
+    doc.text(`Solicitação criada em: ${new Date(permuta.createdAt).toLocaleString()}`, 20, 170);
     if (permuta.substituteSignedAt) {
-      doc.text(`Assinatura do Substituto em: ${new Date(permuta.substituteSignedAt).toLocaleString()}`, 20, 170);
+      doc.text(`Assinatura do Substituto em: ${new Date(permuta.substituteSignedAt).toLocaleString()}`, 20, 180);
     }
     
     doc.save(`Permuta_${permuta.date}_${permuta.requesterName.replace(/\s+/g, '')}.pdf`);
@@ -116,6 +117,7 @@ export const Dashboard: React.FC = () => {
 
   const getShareText = (permuta: any) => {
     let text = `*Termo de Permuta - SAMU 192*%0A%0A`;
+    if (permuta.unitType) text += `*Unidade:* ${permuta.unitType}%0A%0A`;
     text += `*Solicitante:* ${permuta.requesterName} ${permuta.requesterRole ? `(${permuta.requesterRole})` : ''}%0A`;
     if (permuta.requesterDate) text += `*Data (Solicitante):* ${permuta.requesterDate}%0A`;
     if (permuta.requesterShift) text += `*Turno (Solicitante):* ${permuta.requesterShift}%0A`;
@@ -211,7 +213,8 @@ export const Dashboard: React.FC = () => {
                     <li key={p.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col">
-                          <p className="text-sm font-medium text-orange-600 truncate">
+                          <p className="text-sm font-medium text-orange-600 truncate flex items-center">
+                            {p.unitType && <span className="text-xs font-semibold text-white bg-orange-500 px-2 py-0.5 rounded-full mr-2">{p.unitType}</span>}
                             Solicitante: {p.requesterName} {p.requesterRole ? `(${p.requesterRole})` : ''}
                           </p>
                           <p className="text-sm text-gray-500">
@@ -293,7 +296,8 @@ export const Dashboard: React.FC = () => {
                     <li key={p.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                          <p className="text-sm font-medium text-gray-900 truncate flex items-center">
+                            {p.unitType && <span className="text-xs font-semibold text-white bg-gray-500 px-2 py-0.5 rounded-full mr-2">{p.unitType}</span>}
                             Substituto: {p.substituteName} {p.substituteRole ? `(${p.substituteRole})` : ''}
                           </p>
                           <p className="text-sm text-gray-500">
@@ -406,6 +410,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
   const [date, setDate] = useState('');
   const [shift, setShift] = useState('');
   const [reason, setReason] = useState('');
+  const [unitType, setUnitType] = useState('');
   const [loading, setLoading] = useState(false);
 
   const SAMU_ROLES = [
@@ -454,6 +459,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
       if (!substitute) throw new Error("Substituto não encontrado");
 
       await addDoc(collection(db, 'permutas'), {
+        unitType,
         requesterId: profile.uid,
         requesterName: profile.name, // Auto-filled from logged user
         requesterRole,
@@ -488,6 +494,19 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
           <p>Preencha os dados abaixo. Seus dados como solicitante já estão preenchidos automaticamente.</p>
         </div>
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">Tipo de Unidade</label>
+            <select
+              required
+              value={unitType}
+              onChange={(e) => setUnitType(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+            >
+              <option value="">Selecione...</option>
+              <option value="USA">USA (Unidade de Suporte Avançado)</option>
+              <option value="USB">USB (Unidade de Suporte Básico)</option>
+            </select>
+          </div>
           <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-gray-700">Solicitante</label>
