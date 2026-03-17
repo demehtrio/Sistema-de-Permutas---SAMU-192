@@ -8,6 +8,10 @@ interface UserProfile {
   name: string;
   email: string;
   role: string;
+  cargo?: string;
+  base?: string;
+  cpf?: string;
+  coren?: string;
   createdAt: string;
 }
 

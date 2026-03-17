@@ -35,12 +35,12 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
         <div className="text-justify leading-relaxed mb-10 space-y-6">
           <p className="indent-8 text-lg">
             Eu, <strong>{data.solicitanteNome || '_________________________'}</strong>, 
-            matrícula nº <strong>{data.solicitanteMatricula || '_________'}</strong>, 
+            CRM / COREN /  MATRÍCULA nº <strong>{data.solicitanteCoren || '_________'}</strong>, 
             ocupante do cargo de <strong>{data.solicitanteCargo || '_________'}</strong>, 
             lotado(a) na base <strong>{data.solicitanteBase || '_________'}</strong>, 
             venho respeitosamente requerer a V. Sa. autorização para permuta de plantão 
             com o(a) servidor(a) <strong>{data.substitutoNome || '_________________________'}</strong>, 
-            matrícula nº <strong>{data.substitutoMatricula || '_________'}</strong>, 
+            CRM / COREN /  MATRÍCULA nº <strong>{data.substitutoCoren || '_________'}</strong>, 
             ocupante do cargo de <strong>{data.substitutoCargo || '_________'}</strong>, 
             lotado(a) na base <strong>{data.substitutoBase || '_________'}</strong>.
           </p>
@@ -93,7 +93,7 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
               <div className="w-full border-b border-black mb-2 h-16"></div>
             )}
             <p className="font-bold">{data.solicitanteNome || 'Assinatura do Solicitante'}</p>
-            <p className="text-sm text-gray-600">Matrícula: {data.solicitanteMatricula}</p>
+            <p className="text-sm text-gray-600">CRM / COREN /  MATRÍCULA: {data.solicitanteCoren}</p>
           </div>
 
           {/* Substituto Signature */}
@@ -112,7 +112,7 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
               <div className="w-full border-b border-black mb-2 h-16"></div>
             )}
             <p className="font-bold">{data.substitutoNome || 'Assinatura do Substituto'}</p>
-            <p className="text-sm text-gray-600">Matrícula: {data.substitutoMatricula}</p>
+            <p className="text-sm text-gray-600">CRM / COREN /  MATRÍCULA: {data.substitutoCoren}</p>
           </div>
         </div>
 

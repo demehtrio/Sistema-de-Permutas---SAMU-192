@@ -4,6 +4,55 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required) - User ID
+    //   - name: string (required) - Full name
+    //   - email: string (required) - Email address
+    //   - role: string (required, enum: ['servidor', 'coordenacao']) - User role
+    //   - matricula: string (required) - Employee ID
+    //   - cargo: string (required) - Job title
+    //   - base: string (required) - Work base
+    //   - cpf: string (required) - CPF number
+    //   - coren: string (optional) - COREN number
+    //   - createdAt: string (required) - ISO timestamp
+    //
+    // Collection: permutas
+    // Document ID: {permutaId}
+    // Fields:
+    //   - unitType: string (required, enum: ['USA', 'USB']) - Unit type
+    //   - requesterId: string (required) - Requester User ID
+    //   - requesterName: string (required) - Requester name
+    //   - requesterRole: string (required) - Requester job title
+    //   - requesterDate: string (optional) - Requester shift date
+    //   - requesterShift: string (optional) - Requester shift period
+    //   - requesterCpf: string (required) - Requester CPF
+    //   - requesterCoren: string (optional) - Requester COREN
+    //   - substituteId: string (required) - Substitute User ID
+    //   - substituteName: string (required) - Substitute name
+    //   - substituteRole: string (required) - Substitute job title
+    //   - date: string (required) - Substitute shift date
+    //   - shift: string (required) - Substitute shift period
+    //   - reason: string (optional) - Reason for swap
+    //   - status: string (required, enum: ['pendente_substituto', 'pendente_coordenacao', 'aprovada', 'rejeitada']) - Status
+    //   - requesterSignedAt: string (required) - ISO timestamp
+    //   - substituteSignedAt: string (optional) - ISO timestamp
+    //   - substituteCpf: string (optional) - Substitute CPF
+    //   - substituteCoren: string (optional) - Substitute COREN
+    //   - coordinatorSignedAt: string (optional) - ISO timestamp
+    //   - coordinatorName: string (optional) - Coordinator name
+    //   - coordinatorCpf: string (optional) - Coordinator CPF
+    //   - coordinatorCoren: string (optional) - Coordinator COREN
+    //   - createdAt: string (required) - ISO timestamp
+    //   - updatedAt: string (optional) - ISO timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
     // Helper Functions
     // ===============================================================
     function isAuthenticated() {
@@ -14,6 +63,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coordenacao' ||
+          (request.auth.token.email == "samubaseserratalhadausa@gmail.com" && request.auth.token.email_verified == true));
+    }
+    
     function uidUnchanged() {
       return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
     }
@@ -22,66 +77,86 @@ service cloud.firestore {
       return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
     }
     
-    function hasRequiredFields(fields) {
-      return request.resource.data.keys().hasAll(fields);
-    }
-    
     function isValidEmail(email) {
       return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
     }
-    
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
     // ===============================================================
     // Domain Validators
     // ===============================================================
     function isValidUser(data) {
-      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+      return data.uid is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.email is string && isValidEmail(data.email) &&
-             data.role in ['employee', 'admin'] &&
+             data.role in ['servidor', 'coordenacao'] &&
+             data.matricula is string &&
+             data.cargo is string &&
+             data.base is string &&
+             data.cpf is string &&
              data.createdAt is string;
     }
     
     function isValidPermuta(data) {
-      return data.requesterId is string && data.requesterId.size() > 0 &&
-             data.requesterName is string && data.requesterName.size() > 0 && data.requesterName.size() < 100 &&
-             data.substituteId is string && data.substituteId.size() > 0 &&
-             data.substituteName is string && data.substituteName.size() > 0 && data.substituteName.size() < 100 &&
-             data.date is string && data.date.size() > 0 && data.date.size() < 20 &&
-             data.shift is string && data.shift.size() > 0 && data.shift.size() < 50 &&
-             data.status in ['pending', 'approved', 'rejected'] &&
+      return data.unitType in ['USA', 'USB'] &&
+             data.requesterId is string &&
+             data.requesterName is string && data.requesterName.size() > 0 &&
+             data.requesterRole is string &&
+             data.requesterCpf is string &&
+             data.substituteId is string &&
+             data.substituteName is string && data.substituteName.size() > 0 &&
+             data.substituteRole is string &&
+             data.date is string &&
+             data.shift is string &&
+             data.status in ['pendente_substituto', 'pendente_coordenacao', 'aprovada', 'rejeitada'] &&
              data.requesterSignedAt is string &&
              data.createdAt is string;
     }
-    
+
     // ===============================================================
     // Rules
     // ===============================================================
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isOwner(userId) && isValidUser(request.resource.data) && uidUnchanged() && request.resource.data.role == 'employee';
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && uidUnchanged();
       allow update: if isOwner(userId) && isValidUser(request.resource.data) && uidNotModified() && request.resource.data.role == resource.data.role;
     }
     
     match /permutas/{permutaId} {
-      allow read: if isAuthenticated() && (resource.data.requesterId == request.auth.uid || resource.data.substituteId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow read: if isAuthenticated() && (
+        resource.data.requesterId == request.auth.uid || 
+        resource.data.substituteId == request.auth.uid || 
+        resource.data.status == 'aprovada' ||
+        isAdmin()
+      );
       
       // Requester creates
       allow create: if isAuthenticated() && 
                     isValidPermuta(request.resource.data) && 
                     request.resource.data.requesterId == request.auth.uid &&
-                    request.resource.data.status == 'pending';
+                    request.resource.data.status == 'pendente_substituto';
                     
-      // Substitute signs (updates status and substituteSignedAt)
+      // Updates (Substitute or Coordinator)
       allow update: if isAuthenticated() && 
                     isValidPermuta(request.resource.data) && 
-                    resource.data.status == 'pending' &&
                     request.resource.data.requesterId == resource.data.requesterId &&
                     request.resource.data.substituteId == resource.data.substituteId &&
                     request.resource.data.createdAt == resource.data.createdAt &&
                     (
-                      // Requester can cancel
-                      (request.auth.uid == resource.data.requesterId && request.resource.data.status == 'rejected') ||
-                      // Substitute can approve/reject
-                      (request.auth.uid == resource.data.substituteId && request.resource.data.status in ['approved', 'rejected'] && request.resource.data.substituteSignedAt is string)
+                      // Substitute signs
+                      (request.auth.uid == resource.data.substituteId && 
+                       resource.data.status == 'pendente_substituto' &&
+                       request.resource.data.status in ['pendente_coordenacao', 'rejeitada'] &&
+                       (request.resource.data.status == 'pendente_coordenacao' ? request.resource.data.substituteSignedAt is string : true)) ||
+                      
+                      // Coordinator signs
+                      (isAdmin() && 
+                       resource.data.status == 'pendente_coordenacao' &&
+                       request.resource.data.status in ['aprovada', 'rejeitada'] &&
+                       (request.resource.data.status == 'aprovada' ? request.resource.data.coordinatorSignedAt is string : true))
                     );
     }
   }

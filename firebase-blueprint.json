@@ -8,29 +8,48 @@
         "uid": { "type": "string" },
         "name": { "type": "string" },
         "email": { "type": "string", "format": "email" },
-        "role": { "type": "string", "enum": ["employee", "admin"] },
+        "role": { "type": "string", "enum": ["servidor", "coordenacao"] },
+        "matricula": { "type": "string" },
+        "cargo": { "type": "string" },
+        "base": { "type": "string" },
+        "cpf": { "type": "string" },
+        "coren": { "type": "string" },
         "createdAt": { "type": "string" }
       },
-      "required": ["uid", "name", "email", "role", "createdAt"]
+      "required": ["uid", "name", "email", "role", "matricula", "cargo", "base", "cpf", "createdAt"]
     },
     "Permuta": {
       "title": "Permuta",
       "description": "Shift swap request",
       "type": "object",
       "properties": {
+        "unitType": { "type": "string", "enum": ["USA", "USB"] },
         "requesterId": { "type": "string" },
         "requesterName": { "type": "string" },
+        "requesterRole": { "type": "string" },
+        "requesterDate": { "type": "string" },
+        "requesterShift": { "type": "string" },
+        "requesterCpf": { "type": "string" },
+        "requesterCoren": { "type": "string" },
         "substituteId": { "type": "string" },
         "substituteName": { "type": "string" },
+        "substituteRole": { "type": "string" },
         "date": { "type": "string" },
         "shift": { "type": "string" },
         "reason": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "status": { "type": "string", "enum": ["pendente_substituto", "pendente_coordenacao", "aprovada", "rejeitada"] },
         "requesterSignedAt": { "type": "string" },
         "substituteSignedAt": { "type": "string" },
-        "createdAt": { "type": "string" }
+        "substituteCpf": { "type": "string" },
+        "substituteCoren": { "type": "string" },
+        "coordinatorSignedAt": { "type": "string" },
+        "coordinatorName": { "type": "string" },
+        "coordinatorCpf": { "type": "string" },
+        "coordinatorCoren": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
       },
-      "required": ["requesterId", "requesterName", "substituteId", "substituteName", "date", "shift", "status", "requesterSignedAt", "createdAt"]
+      "required": ["unitType", "requesterId", "requesterName", "requesterRole", "requesterCpf", "substituteId", "substituteName", "substituteRole", "date", "shift", "status", "requesterSignedAt", "createdAt"]
     }
   },
   "firestore": {

@@ -3,9 +3,10 @@ export interface UserProfile {
   email: string;
   name: string;
   role: 'servidor' | 'coordenacao';
-  matricula: string;
   cargo: string;
   base: string;
+  cpf: string;
+  coren?: string;
   createdAt: string;
 }
 
@@ -19,15 +20,15 @@ export interface PermutaData {
   id?: string;
   solicitanteId: string;
   solicitanteNome: string;
-  solicitanteMatricula: string;
   solicitanteCargo: string;
   solicitanteBase: string;
+  solicitanteCoren?: string;
   
   substitutoId: string;
   substitutoNome: string;
-  substitutoMatricula: string;
   substitutoCargo: string;
   substitutoBase: string;
+  substitutoCoren?: string;
   
   plantaoOriginalData: string;
   plantaoOriginalHorario: string;

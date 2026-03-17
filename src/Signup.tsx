@@ -11,6 +11,10 @@ export const Signup: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [cargo, setCargo] = useState('');
+  const [base, setBase] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [coren, setCoren] = useState('');
   const [role, setRole] = useState<'servidor' | 'coordenacao'>('servidor');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -29,6 +33,10 @@ export const Signup: React.FC = () => {
         name,
         email,
         role,
+        cargo,
+        base,
+        cpf,
+        coren,
         createdAt: new Date().toISOString()
       });
 
@@ -69,27 +77,86 @@ export const Signup: React.FC = () => {
                 {error}
               </div>
             )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Nome Completo</label>
-              <div className="mt-1">
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                />
+            <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Nome Completo</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <div className="mt-1">
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">CPF</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    required
+                    value={cpf}
+                    onChange={(e) => setCpf(e.target.value)}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">CRM / COREN /  MATRÍCULA</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    required
+                    value={coren}
+                    onChange={(e) => setCoren(e.target.value)}
+                    placeholder="ex.: COREN 00000"
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Cargo</label>
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    required
+                    value={cargo}
+                    onChange={(e) => setCargo(e.target.value)}
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  />
+                </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <label className="block text-sm font-medium text-gray-700">Base</label>
               <div className="mt-1">
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={base}
+                  onChange={(e) => setBase(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
                 />
               </div>
