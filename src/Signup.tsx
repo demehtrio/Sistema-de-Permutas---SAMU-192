@@ -20,6 +20,16 @@ export const Signup: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const SAMU_ROLES = [
+    "Médico(a)",
+    "Enfermeiro(a)",
+    "Técnico(a) de Enfermagem",
+    "Condutor(a) Socorrista",
+    "TARM",
+    "Rádio Operador(a)",
+    "Coordenador(a) / Administrativo"
+  ];
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -157,13 +167,17 @@ export const Signup: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700">Cargo</label>
                 <div className="mt-1">
-                  <input
-                    type="text"
+                  <select
                     required
                     value={cargo}
                     onChange={(e) => setCargo(e.target.value)}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                  />
+                  >
+                    <option value="">Selecione seu cargo...</option>
+                    {SAMU_ROLES.map(role => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

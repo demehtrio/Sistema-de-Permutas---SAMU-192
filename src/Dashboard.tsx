@@ -235,35 +235,36 @@ export const generatePDF = async (permuta: any) => {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text(`Tipo de Unidade: ${permuta.unitType || 'Não informado'}`, 20, 65);
-  doc.text(`Motivo: ${permuta.reason || 'Não informado'}`, 20, 72);
+  doc.text(`Base: ${permuta.base || 'SERRA TALHADA'}`, 20, 72);
+  doc.text(`Motivo: ${permuta.reason || 'Não informado'}`, 20, 79);
   
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Solicitante:', 20, 85);
+  doc.text('Solicitante:', 20, 92);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Nome: ${permuta.requesterName}`, 20, 95);
-  doc.text(`Cargo: ${permuta.requesterRole || 'Não informado'}`, 20, 102);
-  doc.text(`Data do Plantão: ${permuta.requesterDate || 'Não informado'}`, 20, 109);
-  doc.text(`Turno: ${permuta.requesterShift || 'Não informado'}`, 20, 116);
+  doc.text(`Nome: ${permuta.requesterName}`, 20, 102);
+  doc.text(`Cargo: ${permuta.requesterRole || 'Não informado'}`, 20, 109);
+  doc.text(`Data do Plantão: ${permuta.requesterDate || 'Não informado'}`, 20, 116);
+  doc.text(`Turno: ${permuta.requesterShift || 'Não informado'}`, 20, 123);
   
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Substituto:', 120, 85);
+  doc.text('Substituto:', 120, 92);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Nome: ${permuta.substituteName}`, 120, 95);
-  doc.text(`Cargo: ${permuta.substituteRole || 'Não informado'}`, 120, 102);
-  doc.text(`Data do Plantão: ${permuta.date}`, 120, 109);
-  doc.text(`Turno: ${permuta.shift}`, 120, 116);
+  doc.text(`Nome: ${permuta.substituteName}`, 120, 102);
+  doc.text(`Cargo: ${permuta.substituteRole || 'Não informado'}`, 120, 109);
+  doc.text(`Data do Plantão: ${permuta.date}`, 120, 116);
+  doc.text(`Turno: ${permuta.shift}`, 120, 123);
 
   // Second thin red line
   doc.setDrawColor(200, 16, 46);
-  doc.line(20, 135, 190, 135);
+  doc.line(20, 140, 190, 140);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('ASSINATURAS DIGITAIS:', 20, 145);
+  doc.text('ASSINATURAS DIGITAIS:', 20, 150);
 
   // Digital Signature Block
   const drawSignature = (x: number, y: number, name: string, id: string, date: string) => {
@@ -315,7 +316,7 @@ export const generatePDF = async (permuta: any) => {
     doc.text(`EM ${new Date(date).toLocaleDateString()} - ÀS ${new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, textX, y + 14);
   };
 
-  let sigY = 155;
+  let sigY = 160;
   if (permuta.requesterSignedAt) {
     const id = `${permuta.requesterCoren ? `${permuta.requesterCoren} / ` : ''}CPF ${permuta.requesterCpf || ''}`;
     drawSignature(20, sigY, permuta.requesterName, id, permuta.requesterSignedAt);
@@ -362,7 +363,7 @@ export const generatePDF = async (permuta: any) => {
 };
 
 export const Dashboard: React.FC = () => {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, loading: authLoading } = useAuth();
   const [minhasPermutas, setMinhasPermutas] = useState<any[]>([]);
   const [permutasRecebidas, setPermutasRecebidas] = useState<any[]>([]);
   const [permutasCoordenacao, setPermutasCoordenacao] = useState<any[]>([]);
@@ -542,6 +543,17 @@ export const Dashboard: React.FC = () => {
     const body = getShareText(permuta).replace(/%0A/g, '\n').replace(/\*/g, '');
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+          <p className="text-gray-500 font-medium">Carregando seu perfil...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!profile) {
     return (
@@ -1096,6 +1108,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
   const [shift, setShift] = useState('');
   const [reason, setReason] = useState('');
   const [unitType, setUnitType] = useState('');
+  const [base, setBase] = useState('');
   const [loading, setLoading] = useState(false);
 
   const SAMU_ROLES = [
@@ -1111,6 +1124,9 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
   useEffect(() => {
     if (profile?.cargo) {
       setRequesterRole(profile.cargo);
+    }
+    if (profile?.base) {
+      setBase(profile.base);
     }
   }, [profile]);
 
@@ -1147,6 +1163,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
 
       await addDoc(collection(db, 'permutas'), {
         unitType,
+        base,
         requesterId: profile.uid,
         requesterName: profile.name, // Auto-filled from logged user
         requesterRole,
@@ -1182,7 +1199,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
   };
 
   const handleSavePDF = async () => {
-    if (!substituteId || !date || !shift || !reason || !unitType || !requesterDate || !requesterShift) {
+    if (!substituteId || !date || !shift || !reason || !unitType || !base || !requesterDate || !requesterShift) {
       window.dispatchEvent(new CustomEvent('show-error-toast', { detail: "Preencha todos os campos antes de salvar em PDF." }));
       return;
     }
@@ -1192,6 +1209,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
 
     const tempPermuta = {
       unitType,
+      base,
       requesterId: profile.uid,
       requesterName: profile.name,
       requesterRole,
@@ -1239,6 +1257,17 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
               <option value="USA">USA (Unidade de Suporte Avançado)</option>
               <option value="USB">USB (Unidade de Suporte Básico)</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Base</label>
+            <input
+              type="text"
+              required
+              value={base}
+              onChange={(e) => setBase(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+              placeholder="Ex: Serra Talhada"
+            />
           </div>
           <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-2">
             <div>
@@ -1301,7 +1330,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
               >
                 <option value="">Selecione um colega...</option>
                 {users.map(u => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
+                  <option key={u.id} value={u.id}>{u.name} ({u.cargo || 'Cargo não informado'})</option>
                 ))}
               </select>
             </div>
