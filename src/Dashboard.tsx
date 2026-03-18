@@ -155,6 +155,212 @@ const SystemSignatureButton: React.FC<{ onClick?: () => void; className?: string
   </button>
 );
 
+export const generatePDF = async (permuta: any) => {
+  const doc = new jsPDF();
+  
+  // Function to get SAMU Logo as Base64 by rendering the SVG to a canvas
+  const getSamuLogoBase64 = async (): Promise<string> => {
+    return new Promise((resolve) => {
+      const svgString = `<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="250" cy="250" r="240" fill="#FFFFFF" stroke="#E87C00" stroke-width="8" />
+    <path d="M 10,250 A 240,240 0 0,1 490,250 Z" fill="#E87C00" />
+    <circle cx="250" cy="250" r="165" fill="#FFFFFF" />
+    <circle cx="250" cy="250" r="165" fill="none" stroke="#E87C00" stroke-width="6" />
+    <defs>
+      <path id="topTextPath" d="M 55,250 A 195,195 0 0,1 445,250" />
+      <path id="bottomTextPath" d="M 35,250 A 215,215 0 0,0 465,250" />
+    </defs>
+    <text fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="26" letter-spacing="2.5">
+      <textPath href="#topTextPath" startOffset="50%" text-anchor="middle">SERVIÇO DE ATENDIMENTO MÓVEL DE URGÊNCIA</textPath>
+    </text>
+    <text fill="#E87C00" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="30" letter-spacing="5">
+      <textPath href="#bottomTextPath" startOffset="50%" text-anchor="middle">SISTEMA ÚNICO DE SAÚDE</textPath>
+    </text>
+    <g transform="translate(250, 250) scale(1.1)">
+      <path d="M -20,-110 L 20,-110 L 20,-34.64 L 85.26,-72.32 L 105.26,-37.68 L 40,0 L 105.26,37.68 L 85.26,72.32 L 20,34.64 L 20,110 L -20,110 L -20,34.64 L -85.26,72.32 L -105.26,37.68 L -40,0 L -105.26,-37.68 L -85.26,-72.32 L -20,-34.64 Z" fill="none" stroke="#E87C00" stroke-width="12" stroke-linejoin="round" />
+      <path d="M -20,-110 L 20,-110 L 20,-34.64 L 85.26,-72.32 L 105.26,-37.68 L 40,0 L 105.26,37.68 L 85.26,72.32 L 20,34.64 L 20,110 L -20,110 L -20,34.64 L -85.26,72.32 L -105.26,37.68 L -40,0 L -105.26,-37.68 L -85.26,-72.32 L -20,-34.64 Z" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round" />
+      <path d="M -20,-110 L 20,-110 L 20,-34.64 L 85.26,-72.32 L 105.26,-37.68 L 40,0 L 105.26,37.68 L 85.26,72.32 L 20,34.64 L 20,110 L -20,110 L -20,34.64 L -85.26,72.32 L -105.26,37.68 L -40,0 L -105.26,-37.68 L -85.26,-72.32 L -20,-34.64 Z" fill="#C8102E" />
+      <polygon points="0,-85 8,-70 4,-70 4,75 -4,75 -4,-70 -8,-70" fill="#FFFFFF" />
+      <path d="M -5,55 C -30,35 -30,-5 0,-15 C 30,-25 30,-60 0,-70 C -15,-75 -20,-90 -10,-100 C -5,-105 5,-105 10,-95" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
+    </g>
+  </svg>`;
+      
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 500;
+        canvas.height = 500;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          resolve('');
+        }
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = () => {
+        resolve('');
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    });
+  };
+
+  const samuLogoBase64 = await getSamuLogoBase64();
+
+  // Header Layout
+  doc.setFontSize(18);
+  doc.setTextColor(200, 16, 46); // SAMU Red
+  doc.setFont('helvetica', 'bold');
+  doc.text('Termo de Permuta - SAMU 192', 105, 25, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.setFont('helvetica', 'bold');
+  doc.text('BASE SERRA TALHADA - PE', 105, 33, { align: 'center' });
+  
+  // Thin red line
+  doc.setDrawColor(200, 16, 46);
+  doc.setLineWidth(0.2);
+  doc.line(20, 45, 190, 45);
+
+  // Content
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Dados da Permuta:', 20, 55);
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Tipo de Unidade: ${permuta.unitType || 'Não informado'}`, 20, 65);
+  doc.text(`Motivo: ${permuta.reason || 'Não informado'}`, 20, 72);
+  
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Solicitante:', 20, 85);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Nome: ${permuta.requesterName}`, 20, 95);
+  doc.text(`Cargo: ${permuta.requesterRole || 'Não informado'}`, 20, 102);
+  doc.text(`Data do Plantão: ${permuta.requesterDate || 'Não informado'}`, 20, 109);
+  doc.text(`Turno: ${permuta.requesterShift || 'Não informado'}`, 20, 116);
+  
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Substituto:', 120, 85);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Nome: ${permuta.substituteName}`, 120, 95);
+  doc.text(`Cargo: ${permuta.substituteRole || 'Não informado'}`, 120, 102);
+  doc.text(`Data do Plantão: ${permuta.date}`, 120, 109);
+  doc.text(`Turno: ${permuta.shift}`, 120, 116);
+
+  // Second thin red line
+  doc.setDrawColor(200, 16, 46);
+  doc.line(20, 135, 190, 135);
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ASSINATURAS DIGITAIS:', 20, 145);
+
+  // Digital Signature Block
+  const drawSignature = (x: number, y: number, name: string, id: string, date: string) => {
+    // Add full SAMU Logo as watermark behind signature
+    if (samuLogoBase64) {
+      try {
+        // Try to use GState for opacity (watermark effect)
+        doc.setGState(new (doc as any).GState({opacity: 0.15}));
+        doc.addImage(samuLogoBase64, 'PNG', x + 20, y - 5, 25, 25);
+        doc.setGState(new (doc as any).GState({opacity: 1.0}));
+      } catch (e) {
+        // Fallback if GState fails: just draw it small next to it
+        try {
+          doc.addImage(samuLogoBase64, 'PNG', x, y, 15, 15);
+        } catch (e2) {}
+      }
+    } else {
+      // Fallback watermark using jsPDF primitives if image failed to load
+      try {
+        doc.setGState(new (doc as any).GState({opacity: 0.1}));
+        doc.setDrawColor(200, 16, 46);
+        doc.setFillColor(200, 16, 46);
+        doc.circle(x + 32, y + 7, 12, 'F');
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(1.5);
+        doc.line(x + 32, y + 1, x + 32, y + 13);
+        doc.line(x + 26, y + 7, x + 38, y + 7);
+        doc.setGState(new (doc as any).GState({opacity: 1.0}));
+      } catch (e) {}
+    }
+
+    const textX = x + 5;
+    
+    doc.setTextColor(150, 150, 150); // Light Gray
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('DOCUMENTO ASSINADO DIGITALMENTE', textX, y + 2);
+    
+    doc.setTextColor(0, 0, 0); // Black
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(name.toUpperCase(), textX, y + 6);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text(id, textX, y + 10);
+    
+    doc.setFontSize(7);
+    doc.text(`EM ${new Date(date).toLocaleDateString()} - ÀS ${new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, textX, y + 14);
+  };
+
+  let sigY = 155;
+  if (permuta.requesterSignedAt) {
+    const id = `${permuta.requesterCoren ? `${permuta.requesterCoren} / ` : ''}CPF ${permuta.requesterCpf || ''}`;
+    drawSignature(20, sigY, permuta.requesterName, id, permuta.requesterSignedAt);
+    sigY += 25;
+  } else {
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.2);
+    doc.line(20, sigY + 10, 90, sigY + 10);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(permuta.requesterName.toUpperCase(), 55, sigY + 15, { align: 'center' });
+    doc.text('Solicitante', 55, sigY + 19, { align: 'center' });
+    sigY += 25;
+  }
+  
+  if (permuta.substituteSignedAt) {
+    const id = `${permuta.substituteCoren ? `${permuta.substituteCoren} / ` : ''}CPF ${permuta.substituteCpf || ''}`;
+    drawSignature(20, sigY, permuta.substituteName, id, permuta.substituteSignedAt);
+    sigY += 25;
+  } else {
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.2);
+    doc.line(20, sigY + 10, 90, sigY + 10);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(permuta.substituteName.toUpperCase(), 55, sigY + 15, { align: 'center' });
+    doc.text('Substituto', 55, sigY + 19, { align: 'center' });
+    sigY += 25;
+  }
+  
+  if (permuta.coordinatorSignedAt) {
+    const id = `${permuta.coordinatorCoren ? `${permuta.coordinatorCoren} / ` : ''}CPF ${permuta.coordinatorCpf || ''}`;
+    drawSignature(20, sigY, `COORDENAÇÃO: ${permuta.coordinatorName}`, id, permuta.coordinatorSignedAt);
+  } else {
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.2);
+    doc.line(20, sigY + 10, 90, sigY + 10);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('COORDENAÇÃO', 55, sigY + 15, { align: 'center' });
+  }
+  
+  doc.save(`Permuta_${permuta.date}_${permuta.requesterName.replace(/\s+/g, '')}.pdf`);
+};
+
 export const Dashboard: React.FC = () => {
   const { profile, signOut } = useAuth();
   const [minhasPermutas, setMinhasPermutas] = useState<any[]>([]);
@@ -309,185 +515,6 @@ export const Dashboard: React.FC = () => {
     } finally {
       setIsSigning(false);
     }
-  };
-
-  const generatePDF = async (permuta: any) => {
-    const doc = new jsPDF();
-    
-    // Function to get SAMU Logo as Base64 by rendering the SVG to a canvas
-    const getSamuLogoBase64 = async (): Promise<string> => {
-      return new Promise((resolve) => {
-        const svgString = `<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="250" cy="250" r="240" fill="#FFFFFF" stroke="#E87C00" stroke-width="8" />
-      <path d="M 10,250 A 240,240 0 0,1 490,250 Z" fill="#E87C00" />
-      <circle cx="250" cy="250" r="165" fill="#FFFFFF" />
-      <circle cx="250" cy="250" r="165" fill="none" stroke="#E87C00" stroke-width="6" />
-      <defs>
-        <path id="topTextPath" d="M 55,250 A 195,195 0 0,1 445,250" />
-        <path id="bottomTextPath" d="M 35,250 A 215,215 0 0,0 465,250" />
-      </defs>
-      <text fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="26" letter-spacing="2.5">
-        <textPath href="#topTextPath" startOffset="50%" text-anchor="middle">SERVIÇO DE ATENDIMENTO MÓVEL DE URGÊNCIA</textPath>
-      </text>
-      <text fill="#E87C00" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="30" letter-spacing="5">
-        <textPath href="#bottomTextPath" startOffset="50%" text-anchor="middle">SISTEMA ÚNICO DE SAÚDE</textPath>
-      </text>
-      <g transform="translate(250, 250) scale(1.1)">
-        <path d="M -20,-110 L 20,-110 L 20,-34.64 L 85.26,-72.32 L 105.26,-37.68 L 40,0 L 105.26,37.68 L 85.26,72.32 L 20,34.64 L 20,110 L -20,110 L -20,34.64 L -85.26,72.32 L -105.26,37.68 L -40,0 L -105.26,-37.68 L -85.26,-72.32 L -20,-34.64 Z" fill="none" stroke="#E87C00" stroke-width="12" stroke-linejoin="round" />
-        <path d="M -20,-110 L 20,-110 L 20,-34.64 L 85.26,-72.32 L 105.26,-37.68 L 40,0 L 105.26,37.68 L 85.26,72.32 L 20,34.64 L 20,110 L -20,110 L -20,34.64 L -85.26,72.32 L -105.26,37.68 L -40,0 L -105.26,-37.68 L -85.26,-72.32 L -20,-34.64 Z" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round" />
-        <path d="M -20,-110 L 20,-110 L 20,-34.64 L 85.26,-72.32 L 105.26,-37.68 L 40,0 L 105.26,37.68 L 85.26,72.32 L 20,34.64 L 20,110 L -20,110 L -20,34.64 L -85.26,72.32 L -105.26,37.68 L -40,0 L -105.26,-37.68 L -85.26,-72.32 L -20,-34.64 Z" fill="#C8102E" />
-        <polygon points="0,-85 8,-70 4,-70 4,75 -4,75 -4,-70 -8,-70" fill="#FFFFFF" />
-        <path d="M -5,55 C -30,35 -30,-5 0,-15 C 30,-25 30,-60 0,-70 C -15,-75 -20,-90 -10,-100 C -5,-105 5,-105 10,-95" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
-      </g>
-    </svg>`;
-        
-        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = 500;
-          canvas.height = 500;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/png'));
-          } else {
-            resolve('');
-          }
-          URL.revokeObjectURL(url);
-        };
-        img.onerror = () => {
-          resolve('');
-          URL.revokeObjectURL(url);
-        };
-        img.src = url;
-      });
-    };
-
-    const samuLogoBase64 = await getSamuLogoBase64();
-
-    // Header Layout
-    doc.setFontSize(18);
-    doc.setTextColor(200, 16, 46); // SAMU Red
-    doc.setFont('helvetica', 'bold');
-    doc.text('Termo de Permuta - SAMU 192', 105, 25, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.setFont('helvetica', 'bold');
-    doc.text('BASE SERRA TALHADA - PE', 105, 33, { align: 'center' });
-    
-    // Thin red line
-    doc.setDrawColor(200, 16, 46);
-    doc.setLineWidth(0.2);
-    doc.line(20, 45, 190, 45);
-
-    // Content
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Dados da Permuta:', 20, 55);
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Tipo de Unidade: ${permuta.unitType || 'Não informado'}`, 20, 65);
-    doc.text(`Motivo: ${permuta.reason || 'Não informado'}`, 20, 72);
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Solicitante:', 20, 85);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Nome: ${permuta.requesterName}`, 20, 95);
-    doc.text(`Cargo: ${permuta.requesterRole || 'Não informado'}`, 20, 102);
-    doc.text(`Data do Plantão: ${permuta.requesterDate || 'Não informado'}`, 20, 109);
-    doc.text(`Turno: ${permuta.requesterShift || 'Não informado'}`, 20, 116);
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Substituto:', 120, 85);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Nome: ${permuta.substituteName}`, 120, 95);
-    doc.text(`Cargo: ${permuta.substituteRole || 'Não informado'}`, 120, 102);
-    doc.text(`Data do Plantão: ${permuta.date}`, 120, 109);
-    doc.text(`Turno: ${permuta.shift}`, 120, 116);
-
-    // Second thin red line
-    doc.setDrawColor(200, 16, 46);
-    doc.line(20, 135, 190, 135);
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('ASSINATURAS DIGITAIS:', 20, 145);
-
-    // Digital Signature Block
-    const drawSignature = (x: number, y: number, name: string, id: string, date: string) => {
-      // Add full SAMU Logo as watermark behind signature
-      if (samuLogoBase64) {
-        try {
-          // Try to use GState for opacity (watermark effect)
-          doc.setGState(new (doc as any).GState({opacity: 0.15}));
-          doc.addImage(samuLogoBase64, 'PNG', x + 20, y - 5, 25, 25);
-          doc.setGState(new (doc as any).GState({opacity: 1.0}));
-        } catch (e) {
-          // Fallback if GState fails: just draw it small next to it
-          try {
-            doc.addImage(samuLogoBase64, 'PNG', x, y, 15, 15);
-          } catch (e2) {}
-        }
-      } else {
-        // Fallback watermark using jsPDF primitives if image failed to load
-        try {
-          doc.setGState(new (doc as any).GState({opacity: 0.1}));
-          doc.setDrawColor(200, 16, 46);
-          doc.setFillColor(200, 16, 46);
-          doc.circle(x + 32, y + 7, 12, 'F');
-          doc.setDrawColor(255, 255, 255);
-          doc.setLineWidth(1.5);
-          doc.line(x + 32, y + 1, x + 32, y + 13);
-          doc.line(x + 26, y + 7, x + 38, y + 7);
-          doc.setGState(new (doc as any).GState({opacity: 1.0}));
-        } catch (e) {}
-      }
-
-      const textX = x + 5;
-      
-      doc.setTextColor(150, 150, 150); // Light Gray
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
-      doc.text('DOCUMENTO ASSINADO DIGITALMENTE', textX, y + 2);
-      
-      doc.setTextColor(0, 0, 0); // Black
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text(name.toUpperCase(), textX, y + 6);
-      
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.text(id, textX, y + 10);
-      
-      doc.setFontSize(7);
-      doc.text(`EM ${new Date(date).toLocaleDateString()} - ÀS ${new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, textX, y + 14);
-    };
-
-    let sigY = 155;
-    if (permuta.requesterSignedAt) {
-      const id = `${permuta.requesterCoren ? `${permuta.requesterCoren} / ` : ''}CPF ${permuta.requesterCpf || ''}`;
-      drawSignature(20, sigY, permuta.requesterName, id, permuta.requesterSignedAt);
-      sigY += 25;
-    }
-    if (permuta.substituteSignedAt) {
-      const id = `${permuta.substituteCoren ? `${permuta.substituteCoren} / ` : ''}CPF ${permuta.substituteCpf || ''}`;
-      drawSignature(20, sigY, permuta.substituteName, id, permuta.substituteSignedAt);
-      sigY += 25;
-    }
-    if (permuta.coordinatorSignedAt) {
-      const id = `${permuta.coordinatorCoren ? `${permuta.coordinatorCoren} / ` : ''}CPF ${permuta.coordinatorCpf || ''}`;
-      drawSignature(20, sigY, `COORDENAÇÃO: ${permuta.coordinatorName}`, id, permuta.coordinatorSignedAt);
-    }
-    
-    doc.save(`Permuta_${permuta.date}_${permuta.requesterName.replace(/\s+/g, '')}.pdf`);
   };
 
   const getShareText = (permuta: any) => {
@@ -1154,6 +1181,44 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
     }
   };
 
+  const handleSavePDF = async () => {
+    if (!substituteId || !date || !shift || !reason || !unitType || !requesterDate || !requesterShift) {
+      window.dispatchEvent(new CustomEvent('show-error-toast', { detail: "Preencha todos os campos antes de salvar em PDF." }));
+      return;
+    }
+
+    const substitute = users.find(u => u.id === substituteId);
+    if (!substitute) return;
+
+    const tempPermuta = {
+      unitType,
+      requesterId: profile.uid,
+      requesterName: profile.name,
+      requesterRole,
+      requesterCpf: profile.cpf || '',
+      requesterCoren: profile.coren || '',
+      requesterDate,
+      requesterShift,
+      substituteId: substitute.id,
+      substituteName: substitute.name,
+      substituteRole,
+      substituteCpf: substitute.cpf || '',
+      substituteCoren: substitute.coren || '',
+      date,
+      shift,
+      reason,
+      status: 'rascunho',
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      await generatePDF(tempPermuta);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      window.dispatchEvent(new CustomEvent('show-error-toast', { detail: "Erro ao gerar PDF." }));
+    }
+  };
+
   return (
     <div className="bg-white shadow sm:rounded-lg">
       <div className="px-4 py-5 sm:p-6">
@@ -1298,6 +1363,14 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
               className="w-full sm:w-auto bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
             >
               Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSavePDF}
+              className="w-full sm:w-auto bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 flex items-center justify-center"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Salvar em PDF
             </button>
             <GovBrButton 
               className="w-full sm:w-auto" 

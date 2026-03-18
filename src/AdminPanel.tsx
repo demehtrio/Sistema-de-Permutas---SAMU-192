@@ -34,23 +34,39 @@ export const AdminPanel: React.FC = () => {
     };
   }, [profile]);
 
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'user' | 'permuta', id: string, message: string } | null>(null);
+
   const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir este usuário? O login dele continuará existindo no Firebase Auth, mas o perfil será removido.')) return;
-    try {
-      await deleteDoc(doc(db, 'users', userId));
-      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Usuário excluído com sucesso.' }));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `users/${userId}`);
-    }
+    setConfirmDelete({
+      type: 'user',
+      id: userId,
+      message: 'Tem certeza que deseja excluir este usuário? O login dele continuará existindo no Firebase Auth, mas o perfil será removido.'
+    });
   };
 
   const handleDeletePermuta = async (permutaId: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta permuta permanentemente?')) return;
+    setConfirmDelete({
+      type: 'permuta',
+      id: permutaId,
+      message: 'Tem certeza que deseja excluir esta permuta permanentemente?'
+    });
+  };
+
+  const confirmAction = async () => {
+    if (!confirmDelete) return;
+    
     try {
-      await deleteDoc(doc(db, 'permutas', permutaId));
-      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Permuta excluída com sucesso.' }));
+      if (confirmDelete.type === 'user') {
+        await deleteDoc(doc(db, 'users', confirmDelete.id));
+        window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Usuário excluído com sucesso.' }));
+      } else {
+        await deleteDoc(doc(db, 'permutas', confirmDelete.id));
+        window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Permuta excluída com sucesso.' }));
+      }
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `permutas/${permutaId}`);
+      handleFirestoreError(error, OperationType.DELETE, `${confirmDelete.type === 'user' ? 'users' : 'permutas'}/${confirmDelete.id}`);
+    } finally {
+      setConfirmDelete(null);
     }
   };
 
@@ -188,6 +204,29 @@ export const AdminPanel: React.FC = () => {
           </div>
         )}
       </div>
+
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirmar Exclusão</h3>
+            <p className="text-sm text-gray-600 mb-6">{confirmDelete.message}</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmAction}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
