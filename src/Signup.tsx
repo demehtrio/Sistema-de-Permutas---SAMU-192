@@ -11,6 +11,7 @@ export const Signup: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [cargo, setCargo] = useState('');
   const [base, setBase] = useState('');
   const [cpf, setCpf] = useState('');
@@ -22,6 +23,7 @@ export const Signup: React.FC = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -40,9 +42,21 @@ export const Signup: React.FC = () => {
         createdAt: new Date().toISOString()
       });
 
-      navigate('/');
+      setSuccess('Cadastro realizado com sucesso! Redirecionando...');
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Falha ao criar conta.');
+      console.error("Signup error:", err);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Este email já está cadastrado. Por favor, faça login ou use outro email.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('A senha é muito fraca. Ela deve ter pelo menos 6 caracteres.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('O endereço de email fornecido é inválido.');
+      } else {
+        setError('Falha ao criar conta. Verifique os dados e tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -75,6 +89,11 @@ export const Signup: React.FC = () => {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
                 {error}
+              </div>
+            )}
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md text-sm">
+                {success}
               </div>
             )}
             <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">

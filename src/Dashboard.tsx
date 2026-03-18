@@ -3,12 +3,14 @@ import { collection, query, where, onSnapshot, doc, updateDoc, addDoc } from 'fi
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { db, auth } from './firebase';
 import { useAuth } from './AuthContext';
-import { Check, X, Clock, Plus, FileText, MessageCircle, Mail, Inbox, Send, LogOut, User, PlusCircle, Ambulance } from 'lucide-react';
+import { Check, X, Clock, Plus, FileText, MessageCircle, Mail, Inbox, Send, LogOut, User, PlusCircle, Ambulance, AlertTriangle } from 'lucide-react';
 import { jsPDF } from 'jspdf';
+import { twMerge } from 'tailwind-merge';
+import { AdminPanel } from './AdminPanel';
 import { SamuLogo } from './components/SamuLogo';
 import { AlertCircle } from 'lucide-react';
 
-enum OperationType {
+export enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',
   DELETE = 'delete',
@@ -36,7 +38,7 @@ interface FirestoreErrorInfo {
   }
 }
 
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -134,7 +136,7 @@ const GovBrButton: React.FC<{ onClick?: () => void; className?: string; label?: 
   <button
     type="button"
     onClick={onClick || (() => window.open('https://assinador.iti.br/', '_blank'))}
-    className={`flex items-center justify-center px-4 py-2 border border-transparent text-sm font-bold rounded-md text-white bg-[#004184] hover:bg-[#003164] transition-all shadow-md hover:shadow-lg active:scale-95 ${className}`}
+    className={twMerge(`flex items-center justify-center px-4 py-2 border border-transparent text-sm font-bold rounded-md text-white bg-[#004184] hover:bg-[#003164] transition-all shadow-md hover:shadow-lg active:scale-95`, className)}
   >
     <img src="https://www.gov.br/favicon.ico" className="w-5 h-5 mr-2" alt="Gov.br" />
     {label || 'Assinar via GOV.BR'}
@@ -146,7 +148,7 @@ const SystemSignatureButton: React.FC<{ onClick?: () => void; className?: string
     type={type}
     onClick={onClick}
     disabled={loading}
-    className={`flex items-center justify-center px-4 py-2 border-2 border-orange-600 text-sm font-bold rounded-md text-orange-600 bg-white hover:bg-orange-50 transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 ${className}`}
+    className={twMerge(`flex items-center justify-center px-4 py-2 border-2 border-orange-600 text-sm font-bold rounded-md text-orange-600 bg-white hover:bg-orange-50 transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50`, className)}
   >
     <Check className="w-5 h-5 mr-2" />
     {loading ? 'Assinando...' : (label || 'Assinar com Senha do Sistema')}
@@ -160,7 +162,9 @@ export const Dashboard: React.FC = () => {
   const [permutasCoordenacao, setPermutasCoordenacao] = useState<any[]>([]);
   const [permutasAprovadas, setPermutasAprovadas] = useState<any[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [isAdminView, setIsAdminView] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
 
   // Signing state
   const [signingPermutaId, setSigningPermutaId] = useState<string | null>(null);
@@ -176,8 +180,18 @@ export const Dashboard: React.FC = () => {
       // Auto dismiss after 5 seconds
       setTimeout(() => setGlobalError(null), 5000);
     };
+    const handleSuccessEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      setGlobalSuccess(customEvent.detail);
+      // Auto dismiss after 5 seconds
+      setTimeout(() => setGlobalSuccess(null), 5000);
+    };
     window.addEventListener('show-error-toast', handleErrorEvent);
-    return () => window.removeEventListener('show-error-toast', handleErrorEvent);
+    window.addEventListener('show-success-toast', handleSuccessEvent);
+    return () => {
+      window.removeEventListener('show-error-toast', handleErrorEvent);
+      window.removeEventListener('show-success-toast', handleSuccessEvent);
+    };
   }, []);
 
   useEffect(() => {
@@ -280,6 +294,12 @@ export const Dashboard: React.FC = () => {
       }
 
       await updateDoc(permutaRef, updateData);
+      
+      // Close modal and show success
+      setSigningPermutaId(null);
+      setSigningStatus(null);
+      setPassword('');
+      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta assinada com sucesso!" }));
     } catch (error: any) {
       console.error("Erro ao assinar permuta:", error);
       if (error.message && error.message.includes('permission-denied')) {
@@ -496,7 +516,25 @@ export const Dashboard: React.FC = () => {
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
   };
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Perfil Incompleto</h2>
+          <p className="text-gray-600 mb-6">
+            Seu cadastro foi iniciado, mas os dados do perfil não foram salvos corretamente. 
+            Por favor, saia da conta e tente se cadastrar novamente com outro email, ou contate o suporte.
+          </p>
+          <button
+            onClick={() => signOut()}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+          >
+            Sair da Conta
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -504,12 +542,28 @@ export const Dashboard: React.FC = () => {
         <div className="fixed top-4 right-4 z-50 max-w-sm w-full bg-red-50 border-l-4 border-red-500 p-4 rounded shadow-lg flex items-start space-x-3 animate-in fade-in slide-in-from-top-5">
           <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-red-800">Erro de Permissão</h3>
+            <h3 className="text-sm font-medium text-red-800">Erro</h3>
             <p className="mt-1 text-sm text-red-700">{globalError}</p>
           </div>
           <button 
             onClick={() => setGlobalError(null)}
             className="text-red-400 hover:text-red-500 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {globalSuccess && (
+        <div className="fixed top-4 right-4 z-50 max-w-sm w-full bg-green-50 border-l-4 border-green-500 p-4 rounded shadow-lg flex items-start space-x-3 animate-in fade-in slide-in-from-top-5">
+          <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-green-800">Sucesso</h3>
+            <p className="mt-1 text-sm text-green-700">{globalSuccess}</p>
+          </div>
+          <button 
+            onClick={() => setGlobalSuccess(null)}
+            className="text-green-400 hover:text-green-500 transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -528,6 +582,19 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {profile.role === 'coordenacao' && (
+                <button
+                  onClick={() => {
+                    setIsAdminView(!isAdminView);
+                    setIsCreating(false);
+                  }}
+                  className="hidden sm:flex items-center space-x-1 text-white bg-red-700/80 hover:bg-red-800 px-3 py-1.5 rounded-full transition-colors"
+                  title="Painel de Administração"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  <span className="text-sm font-medium">{isAdminView ? 'Voltar' : 'Admin'}</span>
+                </button>
+              )}
               <div className="hidden sm:flex items-center space-x-2 text-white bg-white/20 px-3 py-1.5 rounded-full">
                 <User className="h-4 w-4" />
                 <span className="text-sm font-medium">{profile.name}</span>
@@ -544,8 +611,10 @@ export const Dashboard: React.FC = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {isCreating ? (
+      <main className="max-w-7xl mx-auto py-6 pb-24 sm:px-6 lg:px-8">
+        {isAdminView ? (
+          <AdminPanel />
+        ) : isCreating ? (
           <CreatePermuta onCancel={() => setIsCreating(false)} />
         ) : (
           <div className="space-y-8">
@@ -1071,7 +1140,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
         createdAt: new Date().toISOString()
       });
 
-      alert('Permuta solicitada com sucesso! O substituto foi notificado.');
+      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta solicitada com sucesso! O substituto foi notificado." }));
       onCancel();
     } catch (error: any) {
       console.error("Erro ao criar permuta:", error);
@@ -1222,21 +1291,21 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-100 mt-6">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
             <button
               type="button"
               onClick={onCancel}
-              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              className="w-full sm:w-auto bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
             >
               Cancelar
             </button>
             <GovBrButton 
-              className="sm:w-auto" 
+              className="w-full sm:w-auto" 
             />
             <SystemSignatureButton 
               type="submit"
               loading={loading}
-              className="sm:w-auto bg-orange-600 text-white hover:bg-orange-700 border-none"
+              className="w-full sm:w-auto bg-orange-600 text-white hover:bg-orange-700 border-none"
               label={loading ? 'Enviando...' : 'Assinar e Enviar'}
             />
           </div>

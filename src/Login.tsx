@@ -20,7 +20,14 @@ export const Login: React.FC = () => {
       await signInWithEmailAndPassword(auth, email, password);
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Falha ao fazer login.');
+      console.error("Login error:", err);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        setError('Email ou senha incorretos. Verifique seus dados e tente novamente.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Muitas tentativas de login. Por favor, tente novamente mais tarde.');
+      } else {
+        setError('Falha ao fazer login. Verifique sua conexão e tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
