@@ -4,7 +4,7 @@
   "description": "Sistema de Gestão de Permutas do SAMU Serra Talhada",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#000080",
   "theme_color": "#c8102e",
   "icons": [
     {
