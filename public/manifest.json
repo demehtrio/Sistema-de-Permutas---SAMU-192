@@ -1,0 +1,17 @@
+{
+  "name": "SAMU Serra Talhada - Permutas",
+  "short_name": "SAMU Permutas",
+  "description": "Sistema de Gestão de Permutas do SAMU Serra Talhada",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#c8102e",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
