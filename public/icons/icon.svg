@@ -1,4 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#c8102e"/>
-  <path d="M256 100v312M100 256h312" stroke="white" stroke-width="60" stroke-linecap="round"/>
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="250" cy="250" r="240" fill="#FFFFFF" stroke="#E87C00" stroke-width="8" />
+  <path d="M 10,250 A 240,240 0 0,1 490,250 Z" fill="#E87C00" />
+  <circle cx="250" cy="250" r="165" fill="#FFFFFF" />
+  <circle cx="250" cy="250" r="165" fill="none" stroke="#E87C00" stroke-width="6" />
+  <defs>
+    <path id="topTextPath" d="M 55,250 A 195,195 0 0,1 445,250" />
+    <path id="bottomTextPath" d="M 35,250 A 215,215 0 0,0 465,250" />
+  </defs>
+  <text fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="26" letter-spacing="2.5">
+    <textPath href="#topTextPath" start-offset="50%" text-anchor="middle">
+      SERVIÇO DE ATENDIMENTO MÓVEL DE URGÊNCIA
+    </textPath>
+  </text>
+  <text fill="#E87C00" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="30" letter-spacing="5">
+    <textPath href="#bottomTextPath" start-offset="50%" text-anchor="middle">
+      SISTEMA ÚNICO DE SAÚDE
+    </textPath>
+  </text>
+  <g transform="translate(250, 250) scale(1.1)">
+    <path d="M -20,-110 L 20,-110 L 20,-34.64 L 85.26,-72.32 L 105.26,-37.68 L 40,0 L 105.26,37.68 L 85.26,72.32 L 20,34.64 L 20,110 L -20,110 L -20,34.64 L -85.26,72.32 L -105.26,37.68 L -40,0 L -105.26,-37.68 L -85.26,-72.32 L -20,-34.64 Z" 
+          fill="none" stroke="#E87C00" stroke-width="12" stroke-linejoin="round" />
+    <path d="M -20,-110 L 20,-110 L 20,-34.64 L 85.26,-72.32 L 105.26,-37.68 L 40,0 L 105.26,37.68 L 85.26,72.32 L 20,34.64 L 20,110 L -20,110 L -20,34.64 L -85.26,72.32 L -105.26,37.68 L -40,0 L -105.26,-37.68 L -85.26,-72.32 L -20,-34.64 Z" 
+          fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round" />
+    <path d="M -20,-110 L 20,-110 L 20,-34.64 L 85.26,-72.32 L 105.26,-37.68 L 40,0 L 105.26,37.68 L 85.26,72.32 L 20,34.64 L 20,110 L -20,110 L -20,34.64 L -85.26,72.32 L -105.26,37.68 L -40,0 L -105.26,-37.68 L -85.26,-72.32 L -20,-34.64 Z" 
+          fill="#C8102E" />
+    <polygon points="0,-85 8,-70 4,-70 4,75 -4,75 -4,-70 -8,-70" fill="#FFFFFF" />
+    <path d="M -5,55 C -30,35 -30,-5 0,-15 C 30,-25 30,-60 0,-70 C -15,-75 -20,-90 -10,-100 C -5,-105 5,-105 10,-95" 
+          fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
+  </g>
 </svg>
