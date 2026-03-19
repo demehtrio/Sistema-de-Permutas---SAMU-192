@@ -363,7 +363,7 @@ export const generatePDF = async (permuta: any) => {
 };
 
 export const Dashboard: React.FC = () => {
-  const { profile, signOut, loading: authLoading } = useAuth();
+  const { user, profile, signOut, loading: authLoading } = useAuth();
   const [minhasPermutas, setMinhasPermutas] = useState<any[]>([]);
   const [permutasRecebidas, setPermutasRecebidas] = useState<any[]>([]);
   const [permutasCoordenacao, setPermutasCoordenacao] = useState<any[]>([]);
@@ -372,6 +372,16 @@ export const Dashboard: React.FC = () => {
   const [isAdminView, setIsAdminView] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
+  const [isWaitingForProfile, setIsWaitingForProfile] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading) {
+      const timer = setTimeout(() => {
+        setIsWaitingForProfile(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [authLoading]);
 
   // Signing state
   const [signingPermutaId, setSigningPermutaId] = useState<string | null>(null);
@@ -544,7 +554,7 @@ export const Dashboard: React.FC = () => {
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
   };
 
-  if (authLoading) {
+  if (authLoading || (user && !profile && isWaitingForProfile)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
@@ -555,7 +565,7 @@ export const Dashboard: React.FC = () => {
     );
   }
 
-  if (!profile) {
+  if (user && !profile) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
