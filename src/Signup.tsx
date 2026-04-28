@@ -5,6 +5,7 @@ import { auth, db } from './firebase';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import { SamuLogo } from './components/SamuLogo';
+import { handleFirestoreError, OperationType } from './Dashboard';
 
 export const Signup: React.FC = () => {
   const [name, setName] = useState('');
@@ -35,31 +36,69 @@ export const Signup: React.FC = () => {
     setError('');
     setSuccess('');
     setLoading(true);
+
+    const trimmedEmail = email.trim();
+    const trimmedName = name.trim();
+    const trimmedCpf = cpf.trim();
+    const trimmedCoren = coren.trim();
+    const trimmedBase = base.trim();
+
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      let currentUser = auth.currentUser;
+
+      // If user is not logged in as the intended email, try to create or login
+      if (!currentUser || currentUser.email !== trimmedEmail) {
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
+          currentUser = userCredential.user;
+        } catch (err: any) {
+          // If email is already in use, we try to log in to complete the profile
+          if (err.code === 'auth/email-already-in-use') {
+            setError('Este email já está cadastrado. Se você já tem uma conta mas seu perfil está incompleto, faça login primeiro e o sistema o guiará.');
+            setLoading(false);
+            return;
+          }
+          throw err;
+        }
+      }
+
+      if (!currentUser) throw new Error('Falha na autenticação');
       
-      // Create user profile in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        name,
-        email,
+      await setDoc(doc(db, 'users', currentUser.uid), {
+        uid: currentUser.uid,
+        name: trimmedName,
+        email: trimmedEmail,
         role,
         cargo,
-        base,
-        cpf,
-        coren,
+        base: trimmedBase,
+        cpf: trimmedCpf,
+        coren: trimmedCoren,
         createdAt: new Date().toISOString()
       });
 
       setSuccess('Cadastro realizado com sucesso! Redirecionando...');
       setTimeout(() => {
         navigate('/');
-      }, 2000);
+      }, 1500);
     } catch (err: any) {
       console.error("Signup error:", err);
+      
+      // If it's a permission error or similar from Firestore
+      if (err.message && (err.message.includes('permission-denied') || err.message.includes('Missing or insufficient permissions'))) {
+        try {
+          handleFirestoreError(err, OperationType.CREATE, `users/${auth.currentUser?.uid}`);
+        } catch (fError) {
+          // fError is the stringified JSON from handleFirestoreError
+          setError('Erro de permissão ao salvar perfil. Por favor, contate a coordenação.');
+        }
+        setLoading(false);
+        return;
+      }
+
       if (err.code === 'auth/email-already-in-use') {
-        setError('Este email já está cadastrado. Por favor, faça login ou use outro email.');
+        setError('Este email já está cadastrado. Se você já tem uma conta mas seu perfil está incompleto, faça login e o sistema o guiará.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('O cadastro com email e senha não está habilitado neste projeto Firebase. Por favor, habilite-o no console do Firebase (Authentication > Sign-in method).');
       } else if (err.code === 'auth/weak-password') {
         setError('A senha é muito fraca. Ela deve ter pelo menos 6 caracteres.');
       } else if (err.code === 'auth/invalid-email') {

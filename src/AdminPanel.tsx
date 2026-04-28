@@ -18,14 +18,14 @@ export const AdminPanel: React.FC = () => {
     const unsubUsers = onSnapshot(query(collection(db, 'users')), (snapshot) => {
       setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'users');
+      handleFirestoreError(error, OperationType.LIST, 'users', false);
     });
 
     const unsubPermutas = onSnapshot(query(collection(db, 'permutas')), (snapshot) => {
       setPermutas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'permutas');
+      handleFirestoreError(error, OperationType.LIST, 'permutas', false);
     });
 
     return () => {
@@ -64,7 +64,7 @@ export const AdminPanel: React.FC = () => {
         window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Permuta excluída com sucesso.' }));
       }
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `${confirmDelete.type === 'user' ? 'users' : 'permutas'}/${confirmDelete.id}`);
+      handleFirestoreError(error, OperationType.DELETE, `${confirmDelete.type === 'user' ? 'users' : 'permutas'}/${confirmDelete.id}`, false);
     } finally {
       setConfirmDelete(null);
     }

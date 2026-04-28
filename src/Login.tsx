@@ -22,7 +22,9 @@ export const Login: React.FC = () => {
     } catch (err: any) {
       console.error("Login error:", err);
       if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-        setError('Email ou senha incorretos. Verifique seus dados e tente novamente.');
+        setError('Email ou senha incorretos. Se você ainda não tem uma conta, por favor cadastre-se primeiro.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('O login com email e senha não está habilitado neste projeto Firebase. Por favor, habilite-o no console do Firebase (Authentication > Sign-in method).');
       } else if (err.code === 'auth/too-many-requests') {
         setError('Muitas tentativas de login. Por favor, tente novamente mais tarde.');
       } else {

@@ -65,8 +65,11 @@ service cloud.firestore {
     
     function isAdmin() {
       return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coordenacao' ||
-          (request.auth.token.email == "samubaseserratalhadausa@gmail.com" && request.auth.token.email_verified == true));
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coordenacao') ||
+          request.auth.token.email == "samubaseserratalhadausa@gmail.com"
+        );
     }
     
     function uidUnchanged() {
@@ -78,7 +81,8 @@ service cloud.firestore {
     }
     
     function isValidEmail(email) {
-      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+      // Loosened email validation as Firebase Auth already validates email format
+      return email is string && email.size() > 3 && email.contains("@");
     }
 
     function hasOnlyAllowedFields(fields) {

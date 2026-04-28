@@ -1,14 +1,13 @@
 import React, { useState, useEffect, Component } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { db, auth } from './firebase';
 import { useAuth } from './AuthContext';
-import { Check, X, Clock, Plus, FileText, MessageCircle, Mail, Inbox, Send, LogOut, User, PlusCircle, Ambulance, AlertTriangle } from 'lucide-react';
+import { Check, X, Clock, Plus, FileText, MessageCircle, Mail, Inbox, Send, LogOut, User, PlusCircle, Ambulance, AlertTriangle, Trash2, AlertCircle } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { twMerge } from 'tailwind-merge';
 import { AdminPanel } from './AdminPanel';
 import { SamuLogo } from './components/SamuLogo';
-import { AlertCircle } from 'lucide-react';
 
 export enum OperationType {
   CREATE = 'create',
@@ -38,7 +37,7 @@ interface FirestoreErrorInfo {
   }
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null, shouldThrow = true) {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -73,7 +72,9 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   window.dispatchEvent(new CustomEvent('show-error-toast', { detail: friendlyMessage }));
 
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  if (shouldThrow) {
+    throw new Error(JSON.stringify(errInfo));
+  }
 }
 
 export class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error: any }> {
@@ -93,29 +94,39 @@ export class ErrorBoundary extends Component<{ children: React.ReactNode }, { ha
   render() {
     if (this.state.hasError) {
       let errorMessage = "Ocorreu um erro inesperado.";
+      let isPermissionError = false;
+
       try {
-        const parsed = JSON.parse(this.state.error.message);
-        if (parsed.error) {
-          const opMap: Record<string, string> = {
-            create: "criar",
-            update: "atualizar",
-            delete: "excluir",
-            list: "listar",
-            get: "acessar",
-            write: "salvar"
-          };
-          const op = opMap[parsed.operationType] || "acessar";
-          errorMessage = `Você não tem permissão para ${op} estes dados. Por favor, verifique seu acesso ou contate a coordenação.`;
+        const errorMsg = this.state.error?.message || String(this.state.error);
+        if (errorMsg.startsWith('{') && errorMsg.endsWith('}')) {
+          const parsed = JSON.parse(errorMsg);
+          if (parsed.error) {
+            isPermissionError = true;
+            const opMap: Record<string, string> = {
+              create: "criar",
+              update: "atualizar",
+              delete: "excluir",
+              list: "listar",
+              get: "acessar",
+              write: "salvar"
+            };
+            const op = opMap[parsed.operationType] || "acessar";
+            errorMessage = `Você não tem permissão para ${op} estes dados. Por favor, verifique seu acesso ou contate a coordenação.`;
+          }
+        } else {
+          errorMessage = errorMsg;
         }
       } catch (e) {
-        errorMessage = this.state.error.message || errorMessage;
+        errorMessage = this.state.error?.message || errorMessage;
       }
 
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6 text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Acesso Negado</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              {isPermissionError ? 'Acesso Negado' : 'Erro no Aplicativo'}
+            </h2>
             <p className="text-gray-600 mb-6">{errorMessage}</p>
             <button
               onClick={() => window.location.reload()}
@@ -189,17 +200,23 @@ export const generatePDF = async (permuta: any) => {
       const url = URL.createObjectURL(blob);
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 500;
-        canvas.height = 500;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        } else {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 500;
+          canvas.height = 500;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } else {
+            resolve('');
+          }
+        } catch (e) {
+          console.error("Canvas error:", e);
           resolve('');
+        } finally {
+          URL.revokeObjectURL(url);
         }
-        URL.revokeObjectURL(url);
       };
       img.onerror = () => {
         resolve('');
@@ -271,12 +288,17 @@ export const generatePDF = async (permuta: any) => {
     // Add full SAMU Logo as watermark behind signature
     if (samuLogoBase64) {
       try {
-        // Try to use GState for opacity (watermark effect)
-        doc.setGState(new (doc as any).GState({opacity: 0.15}));
+        // Use a simpler approach for watermark if GState is not available or causing issues
+        doc.saveGraphicsState();
+        const gState = (doc as any).GState ? new (doc as any).GState({opacity: 0.15}) : null;
+        if (gState) {
+          doc.setGState(gState);
+        }
         doc.addImage(samuLogoBase64, 'PNG', x + 20, y - 5, 25, 25);
-        doc.setGState(new (doc as any).GState({opacity: 1.0}));
+        doc.restoreGraphicsState();
       } catch (e) {
-        // Fallback if GState fails: just draw it small next to it
+        console.warn("Watermark error:", e);
+        // Fallback: just draw it small next to it without transparency if GState fails
         try {
           doc.addImage(samuLogoBase64, 'PNG', x, y, 15, 15);
         } catch (e2) {}
@@ -376,10 +398,13 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (!authLoading) {
+      // Increase wait time to 3 seconds to account for Firestore propagation
       const timer = setTimeout(() => {
         setIsWaitingForProfile(false);
-      }, 2000);
+      }, 3000);
       return () => clearTimeout(timer);
+    } else {
+      setIsWaitingForProfile(true);
     }
   }, [authLoading]);
 
@@ -420,7 +445,7 @@ export const Dashboard: React.FC = () => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMinhasPermutas(data);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'permutas/requested');
+      handleFirestoreError(error, OperationType.LIST, 'permutas/requested', false);
     });
 
     // Listen to permutas where I am the substitute
@@ -429,18 +454,18 @@ export const Dashboard: React.FC = () => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setPermutasRecebidas(data);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'permutas/received');
+      handleFirestoreError(error, OperationType.LIST, 'permutas/received', false);
     });
 
     // Listen to permutas for coordination (if user is coordinator)
     let unsubCoord = () => {};
-    if (profile.role === 'coordenacao') {
+    if (profile?.role === 'coordenacao') {
       const qCoord = query(collection(db, 'permutas'), where('status', '==', 'pendente_coordenacao'));
       unsubCoord = onSnapshot(qCoord, (snapshot) => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setPermutasCoordenacao(data);
       }, (error) => {
-        handleFirestoreError(error, OperationType.LIST, 'permutas/coordination');
+        handleFirestoreError(error, OperationType.LIST, 'permutas/coordination', false);
       });
     }
 
@@ -456,7 +481,7 @@ export const Dashboard: React.FC = () => {
       });
       setPermutasAprovadas(data);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'permutas/approved');
+      handleFirestoreError(error, OperationType.LIST, 'permutas/approved', false);
     });
 
     return () => {
@@ -483,7 +508,7 @@ export const Dashboard: React.FC = () => {
 
     try {
       // Verify password
-      await signInWithEmailAndPassword(auth, profile.email, password);
+      await signInWithEmailAndPassword(auth, profile.email.trim(), password);
 
       // Update document
       const permutaRef = doc(db, 'permutas', signingPermutaId);
@@ -519,12 +544,37 @@ export const Dashboard: React.FC = () => {
       window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta assinada com sucesso!" }));
     } catch (error: any) {
       console.error("Erro ao assinar permuta:", error);
-      if (error.message && error.message.includes('permission-denied')) {
-        handleFirestoreError(error, OperationType.UPDATE, `permutas/${signingPermutaId}`);
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        setSigningError('Senha incorreta. Verifique sua senha e tente novamente.');
+      } else if (error.code === 'auth/too-many-requests') {
+        setSigningError('Muitas tentativas. Tente novamente mais tarde.');
+      } else if (error.message && error.message.includes('permission-denied')) {
+        handleFirestoreError(error, OperationType.UPDATE, `permutas/${signingPermutaId}`, false);
+        setSigningError("Acesso Negado: Você não tem permissão para assinar.");
+      } else {
+        setSigningError("Erro ao verificar identidade. Tente novamente.");
       }
-      setSigningError("Senha incorreta ou erro ao assinar.");
     } finally {
       setIsSigning(false);
+    }
+  };
+
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const handleDeletePermuta = async (permutaId: string) => {
+    if (!profile || profile.role !== 'coordenacao') return;
+    setDeleteConfirmId(permutaId);
+  };
+
+  const confirmDeletePermuta = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      await deleteDoc(doc(db, 'permutas', deleteConfirmId));
+      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Permuta excluída com sucesso.' }));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `permutas/${deleteConfirmId}`, false);
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -569,21 +619,37 @@ export const Dashboard: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Perfil Incompleto</h2>
+          <div className="bg-orange-100 p-3 rounded-full w-fit mx-auto mb-4">
+            <User className="h-8 w-8 text-orange-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Perfil Incompleto</h2>
           <p className="text-gray-600 mb-6">
-            Seu cadastro foi iniciado, mas os dados do perfil não foram salvos corretamente. 
-            Por favor, saia da conta e tente se cadastrar novamente com outro email, ou contate o suporte.
+            Seu cadastro foi iniciado, mas os dados do seu perfil não foram encontrados. 
+            Isso pode acontecer se houve uma falha na conexão durante o cadastro.
           </p>
-          <button
-            onClick={() => signOut()}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-          >
-            Sair da Conta
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.href = '/#/signup'}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+            >
+              Tentar Cadastrar Novamente
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+            >
+              Sair da Conta
+            </button>
+          </div>
+          <p className="mt-4 text-xs text-gray-400">
+            ID: {user.uid}
+          </p>
         </div>
       </div>
     );
   }
+
+  if (!profile) return null; // Safety check
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -631,7 +697,7 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {profile.role === 'coordenacao' && (
+              {profile?.role === 'coordenacao' && (
                 <button
                   onClick={() => {
                     setIsAdminView(!isAdminView);
@@ -646,7 +712,7 @@ export const Dashboard: React.FC = () => {
               )}
               <div className="hidden sm:flex items-center space-x-2 text-white bg-white/20 px-3 py-1.5 rounded-full">
                 <User className="h-4 w-4" />
-                <span className="text-sm font-medium">{profile.name}</span>
+                <span className="text-sm font-medium">{profile?.name}</span>
               </div>
               <button
                 onClick={signOut}
@@ -832,6 +898,15 @@ export const Dashboard: React.FC = () => {
                                 >
                                   <img src="https://www.gov.br/favicon.ico" className="h-4 w-4" alt="Gov.br" />
                                 </button>
+                                {profile?.role === 'coordenacao' && (
+                                  <button 
+                                    onClick={() => handleDeletePermuta(p.id)} 
+                                    className="p-1.5 text-white bg-red-600 hover:bg-red-700 rounded-full shadow-sm transition-colors"
+                                    title="Excluir Permuta (Admin)"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                )}
                               </div>
                             </div>
                           )}
@@ -915,6 +990,15 @@ export const Dashboard: React.FC = () => {
                               >
                                 <img src="https://www.gov.br/favicon.ico" className="h-4 w-4" alt="Gov.br" />
                               </button>
+                              {profile?.role === 'coordenacao' && (
+                                <button 
+                                  onClick={() => handleDeletePermuta(p.id)} 
+                                  className="p-1.5 text-white bg-red-600 hover:bg-red-700 rounded-full shadow-sm transition-colors"
+                                  title="Excluir Permuta (Admin)"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
                             </div>
                           </div>
                       </div>
@@ -999,6 +1083,15 @@ export const Dashboard: React.FC = () => {
                               >
                                 <Mail className="h-4 w-4" />
                               </button>
+                              {profile?.role === 'coordenacao' && (
+                                <button 
+                                  onClick={() => handleDeletePermuta(p.id)} 
+                                  className="inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                  title="Excluir Permuta (Admin)"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1102,6 +1195,30 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirmar Exclusão</h3>
+            <p className="text-sm text-gray-600 mb-6">Tem certeza que deseja excluir esta permuta permanentemente?</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeletePermuta}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1199,7 +1316,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
     } catch (error: any) {
       console.error("Erro ao criar permuta:", error);
       if (error.message && error.message.includes('permission-denied')) {
-        handleFirestoreError(error, OperationType.CREATE, 'permutas');
+        handleFirestoreError(error, OperationType.CREATE, 'permutas', false);
       } else {
         window.dispatchEvent(new CustomEvent('show-error-toast', { detail: "Erro ao criar permuta. Verifique os dados e tente novamente." }));
       }
