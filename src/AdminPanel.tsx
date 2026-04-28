@@ -3,7 +3,7 @@ import { collection, query, onSnapshot, deleteDoc, doc } from 'firebase/firestor
 import { db } from './firebase';
 import { useAuth } from './AuthContext';
 import { Trash2, Users, FileText, AlertTriangle } from 'lucide-react';
-import { handleFirestoreError, OperationType } from './Dashboard';
+import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
 
 export const AdminPanel: React.FC = () => {
   const { profile } = useAuth();

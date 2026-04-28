@@ -66,9 +66,9 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() &&
         (
+          request.auth.token.email == "samubaseserratalhadausa@gmail.com" ||
           (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coordenacao') ||
-          request.auth.token.email == "samubaseserratalhadausa@gmail.com"
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coordenacao')
         );
     }
     

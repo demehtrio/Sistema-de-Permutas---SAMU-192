@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
 
 interface UserProfile {
   uid: string;
@@ -58,6 +59,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(false);
         }, (error) => {
           console.error('Error listening to user profile:', error);
+          if (error.message.includes('Quota exceeded')) {
+            handleFirestoreError(error, OperationType.GET, `users/${currentUser.uid}`, false);
+          }
           setLoading(false);
         });
       } else {

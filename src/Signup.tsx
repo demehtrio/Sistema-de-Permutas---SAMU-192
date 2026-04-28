@@ -5,7 +5,7 @@ import { auth, db } from './firebase';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import { SamuLogo } from './components/SamuLogo';
-import { handleFirestoreError, OperationType } from './Dashboard';
+import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
 
 export const Signup: React.FC = () => {
   const [name, setName] = useState('');
