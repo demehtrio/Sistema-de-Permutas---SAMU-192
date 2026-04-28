@@ -20,6 +20,7 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
+  quotaExceeded: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  quotaExceeded: false,
   signOut: async () => {},
 });
 
@@ -36,12 +38,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   useEffect(() => {
     let unsubscribeProfile: (() => void) | null = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      setQuotaExceeded(false);
       
       if (unsubscribeProfile) {
         unsubscribeProfile();
@@ -49,24 +53,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (currentUser) {
+        setLoading(true);
         const docRef = doc(db, 'users', currentUser.uid);
         unsubscribeProfile = onSnapshot(docRef, (docSnap) => {
           if (docSnap.exists()) {
             setProfile({ uid: currentUser.uid, ...docSnap.data() } as UserProfile);
           } else {
+            console.warn('User profile not found in Firestore for UID:', currentUser.uid);
             setProfile(null);
           }
           setLoading(false);
+          setQuotaExceeded(false);
         }, (error) => {
           console.error('Error listening to user profile:', error);
-          if (error.message.includes('Quota exceeded')) {
-            handleFirestoreError(error, OperationType.GET, `users/${currentUser.uid}`, false);
+          const errorMsg = error.message || String(error);
+          if (errorMsg.includes('Quota exceeded') || errorMsg.includes('quota')) {
+            setQuotaExceeded(true);
+            // Global flag as backup
+            (window as any).FIREBASE_QUOTA_EXCEEDED = true;
           }
+          // Always try to show a friendly error if profile fails to load
+          handleFirestoreError(error, OperationType.GET, `users/${currentUser.uid}`, false);
           setLoading(false);
         });
       } else {
         setProfile(null);
         setLoading(false);
+        setQuotaExceeded(false);
       }
     });
 
@@ -81,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, quotaExceeded, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -332,7 +332,7 @@ export const Dashboard: React.FC = () => {
     if (!authLoading) {
       const timer = setTimeout(() => {
         setIsWaitingForProfile(false);
-      }, 3000);
+      }, 2000); // reduced to 2s
       return () => clearTimeout(timer);
     } else {
       setIsWaitingForProfile(true);
