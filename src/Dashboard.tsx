@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Component } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, deleteDoc, orderBy, limit } from 'firebase/firestore';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { db, auth } from './firebase';
 import { useAuth } from './AuthContext';
@@ -346,60 +346,64 @@ export const Dashboard: React.FC = () => {
   const [signingError, setSigningError] = useState('');
   const [isSigning, setIsSigning] = useState(false);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!profile) return;
+    
+    try {
+      // Fetch requested
+      const qRequested = query(
+        collection(db, 'permutas'), 
+        where('requesterId', '==', profile.uid),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      );
+      const requestedSnapshot = await getDocs(qRequested);
+      setMinhasPermutas(requestedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-    // Listen to permutas requested by me
-    const qRequested = query(collection(db, 'permutas'), where('requesterId', '==', profile.uid));
-    const unsubRequested = onSnapshot(qRequested, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMinhasPermutas(data);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'permutas/requested', false);
-    });
+      // Fetch received
+      const qReceived = query(
+        collection(db, 'permutas'), 
+        where('substituteId', '==', profile.uid),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      );
+      const receivedSnapshot = await getDocs(qReceived);
+      setPermutasRecebidas(receivedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-    // Listen to permutas where I am the substitute
-    const qReceived = query(collection(db, 'permutas'), where('substituteId', '==', profile.uid));
-    const unsubReceived = onSnapshot(qReceived, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setPermutasRecebidas(data);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'permutas/received', false);
-    });
+      // Fetch coordination
+      if (profile?.role === 'coordenacao') {
+        const qCoord = query(collection(db, 'permutas'), where('status', '==', 'pendente_coordenacao'));
+        const coordSnapshot = await getDocs(qCoord);
+        setPermutasCoordenacao(coordSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }
 
-    // Listen to permutas for coordination (if user is coordinator)
-    let unsubCoord = () => {};
-    if (profile?.role === 'coordenacao') {
-      const qCoord = query(collection(db, 'permutas'), where('status', '==', 'pendente_coordenacao'));
-      unsubCoord = onSnapshot(qCoord, (snapshot) => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setPermutasCoordenacao(data);
-      }, (error) => {
-        handleFirestoreError(error, OperationType.LIST, 'permutas/coordination', false);
-      });
+      // Fetch approved history
+      const qApproved = query(
+        collection(db, 'permutas'), 
+        where('status', '==', 'aprovada'),
+        orderBy('createdAt', 'desc'),
+        limit(30) // Reduce to 30 to save more quota
+      );
+      try {
+        const approvedSnapshot = await getDocs(qApproved);
+        setPermutasAprovadas(approvedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+      } catch (err: any) {
+        if (err.message?.includes('FAILED_PRECONDITION')) {
+          const qSimple = query(collection(db, 'permutas'), where('status', '==', 'aprovada'), limit(30));
+          const simpleSnap = await getDocs(qSimple);
+          const d = simpleSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+          d.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          setPermutasAprovadas(d);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      handleFirestoreError(error, OperationType.LIST, 'dashboard_data', false);
     }
+  };
 
-    // Listen to all approved permutas for history
-    const qApproved = query(collection(db, 'permutas'), where('status', '==', 'aprovada'));
-    const unsubApproved = onSnapshot(qApproved, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-      // Sort by createdAt descending
-      data.sort((a, b) => {
-        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateB - dateA;
-      });
-      setPermutasAprovadas(data);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'permutas/approved', false);
-    });
-
-    return () => {
-      unsubRequested();
-      unsubReceived();
-      unsubCoord();
-      unsubApproved();
-    };
+  useEffect(() => {
+    fetchData();
   }, [profile]);
 
   const initiateSign = (permutaId: string, status: 'approved' | 'rejected') => {
@@ -447,6 +451,9 @@ export const Dashboard: React.FC = () => {
 
       await updateDoc(permutaRef, updateData);
       
+      // Refresh data
+      await fetchData();
+
       // Close modal and show success
       setSigningPermutaId(null);
       setSigningStatus(null);
@@ -480,6 +487,7 @@ export const Dashboard: React.FC = () => {
     if (!deleteConfirmId) return;
     try {
       await deleteDoc(doc(db, 'permutas', deleteConfirmId));
+      await fetchData();
       window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Permuta excluída com sucesso.' }));
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `permutas/${deleteConfirmId}`, false);
@@ -562,152 +570,185 @@ export const Dashboard: React.FC = () => {
   if (!profile) return null; // Safety check
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-gradient-to-r from-orange-600 to-red-600 shadow-md">
+    <div className="min-h-screen bg-slate-50">
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="bg-white p-1 rounded-full shadow-sm">
-                <SamuLogo className="h-10 w-10 object-contain" />
+          <div className="flex justify-between h-20">
+            <div className="flex items-center space-x-4">
+              <div className="p-1 rounded-xl">
+                <SamuLogo className="h-12 w-12 object-contain" />
               </div>
-              <div className="flex flex-col justify-center">
-                <h1 className="text-lg sm:text-xl font-bold text-white tracking-wide leading-tight">Sistema de Permutas</h1>
-                <span className="text-[10px] sm:text-xs text-orange-100 font-semibold tracking-wider">SAMU 192 - BASE SERRA TALHADA</span>
+              <div className="flex flex-col">
+                <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none flex items-center">
+                  SISTEMA DE PERMUTAS
+                  <span className="ml-2 px-2 py-0.5 bg-samu-red text-white text-[10px] font-black rounded uppercase tracking-widest">v2.0</span>
+                </h1>
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">SAMU 192 • SERRA TALHADA</span>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => fetchData()}
+                className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+                title="Sincronizar dados"
+              >
+                <Plus className="h-4 w-4 rotate-45" /> 
+                <span className="hidden sm:inline">Sincronizar</span>
+              </button>
+
               {profile?.role === 'coordenacao' && (
                 <button
                   onClick={() => {
                     setIsAdminView(!isAdminView);
                     setIsCreating(false);
                   }}
-                  className="hidden sm:flex items-center space-x-1 text-white bg-red-700/80 hover:bg-red-800 px-3 py-1.5 rounded-full transition-colors"
-                  title="Painel de Administração"
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all font-bold text-xs uppercase tracking-wider ${
+                    isAdminView 
+                    ? 'bg-samu-red text-white shadow-lg shadow-red-200' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
                 >
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="text-sm font-medium">{isAdminView ? 'Voltar' : 'Admin'}</span>
+                  <AlertTriangle className={`h-4 w-4 ${isAdminView ? 'animate-pulse' : ''}`} />
+                  <span>{isAdminView ? 'Sair do Admin' : 'Admin'}</span>
                 </button>
               )}
-              <div className="hidden sm:flex items-center space-x-2 text-white bg-white/20 px-3 py-1.5 rounded-full">
-                <User className="h-4 w-4" />
-                <span className="text-sm font-medium">{profile?.name}</span>
+              <div className="hidden sm:flex items-center space-x-3 pl-4 border-l border-slate-200">
+                <div className="flex flex-col items-end mr-3">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Servidor</span>
+                  <span className="text-xs font-bold text-slate-700">{profile?.name}</span>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="p-2.5 text-slate-400 hover:text-samu-red hover:bg-red-50 rounded-xl transition-all"
+                  title="Sair do Sistema"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
               </div>
-              <button
-                onClick={signOut}
-                className="flex items-center space-x-1 text-sm text-white hover:text-red-100 hover:bg-red-700/50 px-3 py-2 rounded-md transition-colors font-medium"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Sair</span>
-              </button>
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 pb-24 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-8 pb-32 px-4 sm:px-6 lg:px-8">
         {isAdminView ? (
           <AdminPanel />
         ) : isCreating ? (
-          <CreatePermuta onCancel={() => setIsCreating(false)} />
+          <CreatePermuta onCancel={() => setIsCreating(false)} onSuccess={fetchData} />
         ) : (
-          <div className="space-y-8">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Painel de Permutas</h2>
+          <div className="space-y-12">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Painel de Controle</h2>
+                <p className="text-slate-500 text-sm font-medium">Gerencie suas trocas de plantão com segurança digital.</p>
+              </div>
               <button
                 onClick={() => setIsCreating(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 transition-colors"
+                className="inline-flex items-center px-6 py-3.5 rounded-2xl shadow-[0_10px_20px_-5px_rgba(232,124,0,0.3)] text-sm font-black uppercase tracking-widest text-white bg-samu-orange hover:bg-samu-orange-light transition-all active:scale-95 group"
               >
-                <PlusCircle className="mr-2 -ml-1 h-5 w-5" />
+                <PlusCircle className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
                 Nova Permuta
               </button>
             </div>
 
             {/* Painel da Coordenação (Apenas para coordenadores) */}
             {profile.role === 'coordenacao' && (
-              <div className="bg-white shadow overflow-hidden sm:rounded-lg border-2 border-indigo-200">
-                <div className="px-4 py-5 sm:px-6 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-indigo-100 p-2 rounded-full">
-                      <Check className="h-6 w-6 text-indigo-600" />
+              <section className="structural-card border-none shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+                <div className="px-6 py-5 bg-gradient-to-r from-[#004184] to-indigo-900 flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-sm border border-white/10">
+                      <Check className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-lg leading-6 font-medium text-indigo-900">
-                        Painel da Coordenação
+                      <h3 className="text-lg font-black text-white uppercase tracking-wider">
+                        Validação de Coordenação
                       </h3>
-                      <p className="mt-1 max-w-2xl text-sm text-indigo-700">
-                        Aprovação final de permutas já assinadas pelos servidores.
+                      <p className="text-indigo-100 text-xs font-medium opacity-80">
+                        Aprovação final de documentos assinados.
                       </p>
                     </div>
                   </div>
-                  <span className="bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded">COORDENADOR</span>
+                  <span className="bg-white/20 text-white text-[10px] font-black px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/20 tracking-widest uppercase">Pendente</span>
                 </div>
-                <ul className="divide-y divide-gray-200">
+                <div className="divide-y divide-slate-100">
                   {permutasCoordenacao.length === 0 ? (
-                    <li className="px-4 py-4 sm:px-6 text-gray-500 text-sm italic">Nenhuma permuta aguardando aprovação da coordenação.</li>
+                    <div className="px-8 py-12 text-center">
+                      <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Inbox className="h-8 w-8 text-slate-200" />
+                      </div>
+                      <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Nenhuma demanda pendente</p>
+                    </div>
                   ) : (
-                    permutasCoordenacao.map((p) => (
-                      <li key={p.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex flex-col">
-                            <div className="flex items-center space-x-2 mb-1">
-                              {p.unitType && <span className="text-[10px] font-bold text-white bg-indigo-600 px-2 py-0.5 rounded-full">{p.unitType}</span>}
-                              <p className="text-sm font-bold text-indigo-900">
-                                {p.requesterName} ↔ {p.substituteName}
-                              </p>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
-                              <p><span className="font-semibold">Solicitante:</span> {p.requesterDate} ({p.requesterShift}) - {p.requesterRole}</p>
-                              <p><span className="font-semibold">Substituto:</span> {p.date} ({p.shift}) - {p.substituteRole}</p>
-                              {p.reason && (
-                                <p className="sm:col-span-2 mt-1 italic text-gray-500">
-                                  <span className="font-semibold not-italic">Motivo:</span> {p.reason}
+                    <ul className="divide-y divide-slate-50">
+                      {permutasCoordenacao.map((p) => (
+                        <li key={p.id} className="group hover:bg-slate-50 transition-colors">
+                          <div className="px-6 py-5 flex items-center justify-between gap-6">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-3 mb-2">
+                                {p.unitType && (
+                                  <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded uppercase tracking-tighter">
+                                    {p.unitType}
+                                  </span>
+                                )}
+                                <p className="text-sm font-black text-slate-900 truncate">
+                                  {p.requesterName} <span className="text-slate-300 font-normal">↔</span> {p.substituteName}
                                 </p>
-                              )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Solicitante</p>
+                                  <p className="text-xs font-bold text-slate-600 bg-slate-100/50 p-1.5 rounded-lg inline-block">{p.requesterDate} <span className="mx-1 text-slate-300">•</span> {p.requesterShift}</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Substituto</p>
+                                  <p className="text-xs font-bold text-slate-600 bg-indigo-50/50 p-1.5 rounded-lg border border-indigo-50 inline-block">{p.date} <span className="mx-1 text-slate-300">•</span> {p.shift}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row items-center gap-2">
+                              <button
+                                onClick={() => initiateSign(p.id, 'approved')}
+                                className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all active:scale-95"
+                              >
+                                Aprovar
+                              </button>
+                              <button
+                                onClick={() => initiateSign(p.id, 'rejected')}
+                                className="w-full sm:w-auto px-5 py-2.5 bg-white text-red-600 text-xs font-black uppercase tracking-widest rounded-xl border border-red-100 hover:bg-red-50 transition-all active:scale-95"
+                              >
+                                Rejeitar
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => initiateSign(p.id, 'approved')}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700"
-                            >
-                              Aprovar
-                            </button>
-                            <button
-                              onClick={() => initiateSign(p.id, 'rejected')}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700"
-                            >
-                              Rejeitar
-                            </button>
-                          </div>
-                        </div>
-                      </li>
-                    ))
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                </ul>
-              </div>
+                </div>
+              </section>
             )}
 
-            {/* Permutas Recebidas (Ações pendentes) */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-              <div className="px-4 py-5 sm:px-6 bg-blue-50 border-b border-blue-100 flex items-center space-x-3">
-                <div className="bg-blue-100 p-2 rounded-full">
-                  <Inbox className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg leading-6 font-medium text-blue-900">
-                    Permutas Recebidas (Para Assinar)
-                  </h3>
-                  <p className="mt-1 max-w-2xl text-sm text-blue-700">
-                    Colegas que solicitaram troca com você.
-                  </p>
+            {/* Permutas Recebidas (Para Assinar) */}
+            <section className="structural-card border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] text-slate-800">
+              <div className="px-6 py-5 bg-white border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-samu-orange/10 p-3 rounded-2xl border border-samu-orange/10">
+                    <Inbox className="h-6 w-6 text-samu-orange" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">
+                      Convites Recebidos
+                    </h3>
+                    <p className="text-slate-500 text-xs font-medium">Trocas solicitadas por outros servidores.</p>
+                  </div>
                 </div>
               </div>
-              <ul className="divide-y divide-gray-200">
+              <div className="divide-y divide-slate-50">
                 {permutasRecebidas.length === 0 ? (
-                  <li className="px-4 py-4 sm:px-6 text-gray-500 text-sm">Nenhuma permuta recebida.</li>
+                  <div className="px-8 py-16 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">Nenhuma solicitação ativa</div>
                 ) : (
-                  permutasRecebidas.map((p) => (
+                  <ul className="divide-y divide-slate-50">
+                    {permutasRecebidas.map((p) => (
                     <li key={p.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col">
@@ -792,31 +833,33 @@ export const Dashboard: React.FC = () => {
                         </div>
                       </div>
                     </li>
-                  ))
-                )}
-              </ul>
+                  ))}
+                </ul>
+              )}
             </div>
+          </section>
 
-            {/* Minhas Solicitações */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-              <div className="px-4 py-5 sm:px-6 bg-orange-50 border-b border-orange-100 flex items-center space-x-3">
-                <div className="bg-orange-100 p-2 rounded-full">
-                  <Send className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg leading-6 font-medium text-orange-900">
-                    Minhas Solicitações
-                  </h3>
-                  <p className="mt-1 max-w-2xl text-sm text-orange-700">
-                    Permutas que você solicitou.
-                  </p>
+          {/* Minhas Solicitações */}
+            <section className="structural-card border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] text-slate-800">
+              <div className="px-6 py-5 bg-white border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-azul-ferrete/5 p-3 rounded-2xl border border-azul-ferrete/10">
+                    <Send className="h-6 w-6 text-azul-ferrete" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">
+                      Aguardando Resposta
+                    </h3>
+                    <p className="text-slate-500 text-xs font-medium">Permutas enviadas a outros servidores.</p>
+                  </div>
                 </div>
               </div>
-              <ul className="divide-y divide-gray-200">
+              <div className="divide-y divide-slate-50">
                 {minhasPermutas.length === 0 ? (
-                  <li className="px-4 py-4 sm:px-6 text-gray-500 text-sm">Nenhuma solicitação feita.</li>
+                  <div className="px-8 py-16 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">Sem solicitações em aberto</div>
                 ) : (
-                  minhasPermutas.map((p) => (
+                  <ul className="divide-y divide-slate-50">
+                    {minhasPermutas.map((p) => (
                     <li key={p.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col">
@@ -882,12 +925,13 @@ export const Dashboard: React.FC = () => {
                           </div>
                       </div>
                     </li>
-                  ))
-                )}
-              </ul>
+                  ))}
+                </ul>
+              )}
             </div>
+          </section>
 
-            {/* Histórico de Permutas Aprovadas */}
+          {/* Histórico de Permutas Aprovadas */}
             <div className="bg-white shadow overflow-hidden sm:rounded-lg border-t-4 border-green-500">
               <div className="px-4 py-5 sm:px-6 bg-green-50 border-b border-green-100 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -1102,7 +1146,7 @@ export const Dashboard: React.FC = () => {
   );
 };
 
-const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
+const CreatePermuta: React.FC<{ onCancel: () => void, onSuccess?: () => void }> = ({ onCancel, onSuccess }) => {
   const { profile } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [substituteId, setSubstituteId] = useState('');
@@ -1146,17 +1190,25 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
   }, [substituteId, users]);
 
   useEffect(() => {
-    // Load users to select substitute
-    const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const usersData = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(u => u.id !== profile?.uid); // Exclude self
-      setUsers(usersData);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'users');
-    });
-    return () => unsub();
-  }, [profile]);
+    // Load users to select substitute once when component mounts
+    // Using simple getDocs instead of onSnapshot to save quota
+    const fetchUsers = async () => {
+      try {
+        const { getDocs, query, collection } = await import('firebase/firestore');
+        const snapshot = await getDocs(query(collection(db, 'users')));
+        const usersData = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(u => u.id !== profile?.uid);
+        setUsers(usersData);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    
+    if (profile) {
+      fetchUsers();
+    }
+  }, [profile?.uid]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1191,6 +1243,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
       });
 
       window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta solicitada com sucesso! O substituto foi notificado." }));
+      if (onSuccess) onSuccess();
       onCancel();
     } catch (error: any) {
       console.error("Erro ao criar permuta:", error);

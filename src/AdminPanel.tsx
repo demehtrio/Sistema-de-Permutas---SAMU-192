@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, getDocs, deleteDoc, doc, orderBy, limit } from 'firebase/firestore';
 import { db } from './firebase';
 import { useAuth } from './AuthContext';
-import { Trash2, Users, FileText, AlertTriangle } from 'lucide-react';
+import { Trash2, Users, FileText, AlertTriangle, RefreshCw, X, ShieldAlert } from 'lucide-react';
 import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const AdminPanel: React.FC = () => {
   const { profile } = useAuth();
@@ -12,26 +13,31 @@ export const AdminPanel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'users' | 'permutas'>('users');
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (profile?.role !== 'coordenacao') return;
+    setLoading(true);
+    try {
+      // Fetch users
+      const usersSnapshot = await getDocs(query(collection(db, 'users'), orderBy('name', 'asc')));
+      setUsers(usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-    const unsubUsers = onSnapshot(query(collection(db, 'users')), (snapshot) => {
-      setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'users', false);
-    });
-
-    const unsubPermutas = onSnapshot(query(collection(db, 'permutas')), (snapshot) => {
-      setPermutas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      // Fetch recent permutas (limit to 100 to save quota)
+      const permutasSnapshot = await getDocs(query(
+        collection(db, 'permutas'), 
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      ));
+      setPermutas(permutasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (error) {
+      console.error("Error fetching admin data:", error);
+      handleFirestoreError(error, OperationType.LIST, 'admin_data', false);
+    } finally {
       setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'permutas', false);
-    });
+    }
+  };
 
-    return () => {
-      unsubUsers();
-      unsubPermutas();
-    };
+  useEffect(() => {
+    fetchData();
   }, [profile]);
 
   const [confirmDelete, setConfirmDelete] = useState<{ type: 'user' | 'permuta', id: string, message: string } | null>(null);
@@ -58,9 +64,11 @@ export const AdminPanel: React.FC = () => {
     try {
       if (confirmDelete.type === 'user') {
         await deleteDoc(doc(db, 'users', confirmDelete.id));
+        setUsers(prev => prev.filter(u => u.id !== confirmDelete.id));
         window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Usuário excluído com sucesso.' }));
       } else {
         await deleteDoc(doc(db, 'permutas', confirmDelete.id));
+        setPermutas(prev => prev.filter(p => p.id !== confirmDelete.id));
         window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Permuta excluída com sucesso.' }));
       }
     } catch (error) {
@@ -72,73 +80,119 @@ export const AdminPanel: React.FC = () => {
 
   if (profile?.role !== 'coordenacao') {
     return (
-      <div className="p-8 text-center text-gray-500">
-        Acesso negado. Apenas coordenadores podem acessar esta área.
+      <div className="p-12 text-center">
+        <div className="bg-red-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-red-100 shadow-xl shadow-red-50">
+           <ShieldAlert className="h-10 w-10 text-samu-red" />
+        </div>
+        <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Acesso Restrito</h2>
+        <p className="text-slate-500 font-medium max-w-xs mx-auto">Você não tem permissões de coordenação para acessar esta ferramenta.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div className="p-6 border-b border-gray-200 bg-red-50">
-        <div className="flex items-center text-red-800 mb-2">
-          <AlertTriangle className="w-6 h-6 mr-2" />
-          <h2 className="text-xl font-bold">Painel de Administração (Zona de Perigo)</h2>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden"
+    >
+      {/* Header */}
+      <div className="px-8 py-8 bg-slate-900 text-white border-b border-slate-800">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+          <div>
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-samu-red p-2.5 rounded-2xl shadow-lg shadow-red-900/40">
+                <ShieldAlert className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-2xl font-black uppercase tracking-tighter">Zona de Administração</h2>
+              <span className="hidden sm:inline-block px-2 py-1 bg-white/10 text-white/50 text-[10px] font-black rounded border border-white/10 tracking-widest uppercase">Root Access</span>
+            </div>
+            <p className="text-slate-400 text-xs font-medium max-w-md">
+              Interface de monitoramento e manutenção de registros. Ações aqui têm impacto direto na base de dados.
+            </p>
+          </div>
+          <button 
+            onClick={fetchData}
+            disabled={loading}
+            className="flex items-center space-x-2 px-5 py-3 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl border border-white/5 transition-all active:scale-95 disabled:opacity-50 group"
+          >
+            <RefreshCw className={`w-4 h-4 text-samu-orange group-hover:rotate-180 transition-transform duration-700 ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? 'Sincronizando...' : 'Recarregar'}</span>
+          </button>
         </div>
-        <p className="text-sm text-red-600">
-          Atenção: As exclusões feitas aqui são permanentes e não podem ser desfeitas. Use apenas para limpar dados de teste.
-        </p>
       </div>
 
-      <div className="flex border-b border-gray-200">
+      {/* Tabs */}
+      <div className="flex bg-slate-50 p-2 gap-2 border-b border-slate-100">
         <button
           onClick={() => setActiveTab('users')}
-          className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center ${
-            activeTab === 'users' ? 'border-b-2 border-red-600 text-red-600 bg-red-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center transition-all ${
+            activeTab === 'users' 
+            ? 'bg-white text-slate-900 shadow-sm border border-slate-200' 
+            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <Users className="w-4 h-4 mr-2" />
-          Usuários ({users.length})
+          <Users className={`w-4 h-4 mr-2.5 ${activeTab === 'users' ? 'text-samu-red' : ''}`} />
+          Usuários <span className="ml-2 font-mono text-[10px] bg-slate-200/50 px-2 py-0.5 rounded-full">{users.length}</span>
         </button>
         <button
           onClick={() => setActiveTab('permutas')}
-          className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center ${
-            activeTab === 'permutas' ? 'border-b-2 border-red-600 text-red-600 bg-red-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center transition-all ${
+            activeTab === 'permutas' 
+            ? 'bg-white text-slate-900 shadow-sm border border-slate-200' 
+            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <FileText className="w-4 h-4 mr-2" />
-          Permutas ({permutas.length})
+          <FileText className={`w-4 h-4 mr-2.5 ${activeTab === 'permutas' ? 'text-samu-orange' : ''}`} />
+          Permutas <span className="ml-2 font-mono text-[10px] bg-slate-200/50 px-2 py-0.5 rounded-full">{permutas.length}</span>
         </button>
       </div>
 
-      <div className="p-0">
+      {/* Content Area */}
+      <div className="min-h-[400px]">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Carregando dados...</div>
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+             <div className="w-12 h-12 border-4 border-slate-100 border-t-samu-red rounded-full animate-spin" />
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Acessando Database...</span>
+          </div>
         ) : activeTab === 'users' ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo/Role</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+            <table className="min-w-full divide-y divide-slate-100">
+              <thead>
+                <tr className="bg-slate-50/50">
+                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">IDENTIFICAÇÃO</th>
+                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">CARGO E NÍVEL</th>
+                  <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">AÇÕES</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-slate-50 border-t border-slate-100">
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.cargo} <span className="text-xs bg-gray-100 px-2 py-1 rounded-full ml-2">{user.role}</span>
+                  <tr key={user.id} className="hover:bg-slate-50 transition-colors group">
+                    <td className="px-8 py-5">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-black text-slate-900 flex items-center">
+                          {user.name}
+                          {user.id === profile.uid && (
+                            <span className="ml-2 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[8px] font-black rounded border border-indigo-100 uppercase italic">Você</span>
+                          )}
+                        </span>
+                        <span className="text-xs font-medium text-slate-400 font-mono">{user.email}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-8 py-5 whitespace-nowrap">
+                       <div className="flex items-center space-x-2">
+                        <span className="text-[10px] font-black text-slate-600 border border-slate-200 bg-slate-50 px-2 py-1 rounded uppercase">{user.cargo}</span>
+                        <span className={`text-[9px] font-black px-2 py-1 rounded-full border uppercase ${user.role === 'coordenacao' ? 'bg-samu-red/5 text-samu-red border-samu-red/10' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                          {user.role}
+                        </span>
+                       </div>
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap text-right">
                       <button
                         onClick={() => handleDeleteUser(user.id)}
                         disabled={user.id === profile.uid}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                        title={user.id === profile.uid ? "Você não pode excluir a si mesmo" : "Excluir usuário"}
+                        className="p-3 text-slate-300 hover:text-samu-red hover:bg-red-50 rounded-2xl transition-all disabled:opacity-0 disabled:pointer-events-none group-hover:bg-red-50/50"
+                        title="Remover Registro"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -147,7 +201,9 @@ export const AdminPanel: React.FC = () => {
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">Nenhum usuário encontrado.</td>
+                    <td colSpan={3} className="px-8 py-20 text-center">
+                       <p className="text-slate-300 text-xs font-black uppercase tracking-widest">Vazio</p>
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -155,39 +211,50 @@ export const AdminPanel: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data/Turno</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Substituto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+            <table className="min-w-full divide-y divide-slate-100">
+              <thead>
+                <tr className="bg-slate-50/50">
+                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">LOG DE PERMUTA</th>
+                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">ENVOLVIDOS</th>
+                  <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">STATUS</th>
+                  <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">GESTÃO</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {permutas.map((permuta) => (
-                  <tr key={permuta.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {permuta.date} <br/>
-                      <span className="text-xs text-gray-500">{permuta.shift}</span>
+              <tbody className="bg-white divide-y divide-slate-50 border-t border-slate-100">
+                {permutas.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors group">
+                    <td className="px-8 py-5">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-slate-900">{p.date}</span>
+                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{p.shift}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{permuta.requesterName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{permuta.substituteName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        permuta.status === 'aprovada' ? 'bg-green-100 text-green-800' : 
-                        permuta.status === 'rejeitada' ? 'bg-red-100 text-red-800' : 
-                        'bg-yellow-100 text-yellow-800'
+                    <td className="px-8 py-5">
+                      <div className="flex flex-col space-y-0.5">
+                        <div className="flex items-center space-x-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">REQ:</span>
+                          <span className="text-xs font-bold text-slate-600">{p.requesterName}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">SUB:</span>
+                          <span className="text-xs font-bold text-slate-600">{p.substituteName}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 whitespace-nowrap">
+                      <span className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border ${
+                        p.status === 'aprovada' || p.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                        p.status === 'rejeitada' || p.status === 'rejected' ? 'bg-red-50 text-samu-red border-red-100' : 
+                        'bg-orange-50 text-samu-orange border-orange-100'
                       }`}>
-                        {permuta.status}
+                        {p.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-8 py-5 whitespace-nowrap text-right">
                       <button
-                        onClick={() => handleDeletePermuta(permuta.id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Excluir permuta"
+                        onClick={() => handleDeletePermuta(p.id)}
+                        className="p-3 text-slate-300 hover:text-samu-red hover:bg-red-50 rounded-2xl transition-all group-hover:bg-red-50/50"
+                        title="Deletar Documento"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -196,7 +263,9 @@ export const AdminPanel: React.FC = () => {
                 ))}
                 {permutas.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Nenhuma permuta encontrada.</td>
+                    <td colSpan={4} className="px-8 py-20 text-center">
+                       <p className="text-slate-300 text-xs font-black uppercase tracking-widest">Nenhum histórico</p>
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -205,28 +274,60 @@ export const AdminPanel: React.FC = () => {
         )}
       </div>
 
-      {confirmDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirmar Exclusão</h3>
-            <p className="text-sm text-gray-600 mb-6">{confirmDelete.message}</p>
-            <div className="flex justify-end space-x-3">
-              <button
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[9999]"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl relative border border-slate-100 overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-samu-red"></div>
+              
+              <div className="bg-red-50 w-20 h-20 rounded-3xl flex items-center justify-center mb-8 border border-red-100">
+                <Trash2 className="w-10 h-10 text-samu-red" />
+              </div>
+
+              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-4 flex items-center">
+                Confirmar Exclusão
+              </h3>
+              
+              <p className="text-slate-500 font-medium leading-relaxed mb-10">
+                {confirmDelete.message} Esta ação é <span className="text-samu-red font-black uppercase">irreversível</span> e o registro será removido permanentemente dos servidores.
+              </p>
+              
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="flex-1 px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all"
+                >
+                  Manter Registro
+                </button>
+                <button
+                  onClick={confirmAction}
+                  className="flex-1 px-6 py-4 text-xs font-black uppercase tracking-widest text-white bg-samu-red hover:bg-red-700 shadow-xl shadow-red-200 rounded-2xl transition-all active:scale-95"
+                >
+                  DELETAR AGORA
+                </button>
+              </div>
+
+              <button 
                 onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                className="absolute top-6 right-6 text-slate-300 hover:text-slate-500"
               >
-                Cancelar
+                <X className="w-6 h-6" />
               </button>
-              <button
-                onClick={confirmAction}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
-              >
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
