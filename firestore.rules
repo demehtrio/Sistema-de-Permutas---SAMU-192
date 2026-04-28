@@ -72,30 +72,14 @@ service cloud.firestore {
         );
     }
     
-    function uidUnchanged() {
-      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
-    }
-    
-    function uidNotModified() {
-      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
-    }
-    
     function isValidEmail(email) {
-      // Loosened email validation as Firebase Auth already validates email format
       return email is string && email.size() > 3 && email.contains("@");
     }
 
-    function hasOnlyAllowedFields(fields) {
-      return request.resource.data.keys().hasOnly(fields);
-    }
-
-    // ===============================================================
-    // Domain Validators
-    // ===============================================================
     function isValidUser(data) {
       return data.uid is string &&
-             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.email is string && isValidEmail(data.email) &&
+             data.name is string && data.name.size() > 0 &&
+             data.email is string &&
              data.role in ['servidor', 'coordenacao'] &&
              data.cargo is string &&
              data.base is string &&
@@ -106,11 +90,11 @@ service cloud.firestore {
     function isValidPermuta(data) {
       return data.unitType in ['USA', 'USB'] &&
              data.requesterId is string &&
-             data.requesterName is string && data.requesterName.size() > 0 &&
+             data.requesterName is string &&
              data.requesterRole is string &&
              data.requesterCpf is string &&
              data.substituteId is string &&
-             data.substituteName is string && data.substituteName.size() > 0 &&
+             data.substituteName is string &&
              data.substituteRole is string &&
              data.date is string &&
              data.shift is string &&
@@ -118,14 +102,11 @@ service cloud.firestore {
              data.requesterSignedAt is string &&
              data.createdAt is string;
     }
-
-    // ===============================================================
-    // Rules
-    // ===============================================================
+    
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isOwner(userId) && isValidUser(request.resource.data) && uidUnchanged();
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) && uidNotModified() && request.resource.data.role == resource.data.role;
+      allow create: if isOwner(userId); 
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
       allow delete: if isAdmin();
     }
     

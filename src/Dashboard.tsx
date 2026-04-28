@@ -326,13 +326,10 @@ export const Dashboard: React.FC = () => {
   const [permutasAprovadas, setPermutasAprovadas] = useState<any[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isAdminView, setIsAdminView] = useState(false);
-  const [globalError, setGlobalError] = useState<string | null>(null);
-  const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
   const [isWaitingForProfile, setIsWaitingForProfile] = useState(true);
 
   useEffect(() => {
     if (!authLoading) {
-      // Increase wait time to 3 seconds to account for Firestore propagation
       const timer = setTimeout(() => {
         setIsWaitingForProfile(false);
       }, 3000);
@@ -348,27 +345,6 @@ export const Dashboard: React.FC = () => {
   const [password, setPassword] = useState('');
   const [signingError, setSigningError] = useState('');
   const [isSigning, setIsSigning] = useState(false);
-
-  useEffect(() => {
-    const handleErrorEvent = (e: Event) => {
-      const customEvent = e as CustomEvent<string>;
-      setGlobalError(customEvent.detail);
-      // Auto dismiss after 5 seconds
-      setTimeout(() => setGlobalError(null), 5000);
-    };
-    const handleSuccessEvent = (e: Event) => {
-      const customEvent = e as CustomEvent<string>;
-      setGlobalSuccess(customEvent.detail);
-      // Auto dismiss after 5 seconds
-      setTimeout(() => setGlobalSuccess(null), 5000);
-    };
-    window.addEventListener('show-error-toast', handleErrorEvent);
-    window.addEventListener('show-success-toast', handleSuccessEvent);
-    return () => {
-      window.removeEventListener('show-error-toast', handleErrorEvent);
-      window.removeEventListener('show-success-toast', handleSuccessEvent);
-    };
-  }, []);
 
   useEffect(() => {
     if (!profile) return;
@@ -587,37 +563,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {globalError && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm w-full bg-red-50 border-l-4 border-red-500 p-4 rounded shadow-lg flex items-start space-x-3 animate-in fade-in slide-in-from-top-5">
-          <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-red-800">Erro</h3>
-            <p className="mt-1 text-sm text-red-700">{globalError}</p>
-          </div>
-          <button 
-            onClick={() => setGlobalError(null)}
-            className="text-red-400 hover:text-red-500 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      )}
-
-      {globalSuccess && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm w-full bg-green-50 border-l-4 border-green-500 p-4 rounded shadow-lg flex items-start space-x-3 animate-in fade-in slide-in-from-top-5">
-          <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-green-800">Sucesso</h3>
-            <p className="mt-1 text-sm text-green-700">{globalSuccess}</p>
-          </div>
-          <button 
-            onClick={() => setGlobalSuccess(null)}
-            className="text-green-400 hover:text-green-500 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      )}
       <nav className="bg-gradient-to-r from-orange-600 to-red-600 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">

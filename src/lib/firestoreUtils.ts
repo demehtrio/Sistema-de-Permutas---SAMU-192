@@ -61,7 +61,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   let friendlyMessage = `Acesso Negado: Você não tem permissão para ${op} estes dados. Por favor, verifique seu acesso ou contate a coordenação.`;
   
   if (errInfo.error.includes('Quota exceeded')) {
-    friendlyMessage = "Limite de uso do banco de dados excedido para hoje. O sistema voltará ao normal amanhã.";
+    friendlyMessage = "LIMITE DE USO ATINGIDO: O banco de dados gratuito do Firebase atingiu o limite diário de leituras. O sistema voltará a funcionar automaticamente amanhã à medida que a cota for resetada pelo Google. Desculpe o transtorno.";
   }
 
   // Dispatch event to show friendly message in UI
