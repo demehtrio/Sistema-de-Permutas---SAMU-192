@@ -120,12 +120,12 @@ export const Signup: React.FC = () => {
           <div className="bg-white p-4 rounded-3xl shadow-xl shadow-slate-200 mb-6 border border-slate-50">
             <SamuLogo className="h-24 w-24 object-contain" />
           </div>
-          <h1 className="text-3xl font-black text-azul-ferrete tracking-tighter uppercase">SAMU 192</h1>
+          <h1 className="text-3xl font-black text-samu-blue tracking-tighter uppercase">SAMU 192</h1>
           <h2 className="text-xs font-black text-samu-orange tracking-[0.3em] uppercase">Cadastro de Colaborador</h2>
         </div>
         <p className="mt-8 text-center text-sm text-slate-500 font-medium tracking-tight">
           Ou{' '}
-          <Link to="/login" className="font-bold text-azul-ferrete hover:text-azul-ferrete-hover transition-colors underline underline-offset-4 decoration-2">
+          <Link to="/login" className="font-bold text-samu-blue hover:text-samu-blue-hover transition-colors underline underline-offset-4 decoration-2">
             faça login na sua conta existente
           </Link>
         </p>
@@ -133,7 +133,7 @@ export const Signup: React.FC = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
         <div className="bg-white py-12 px-10 shadow-2xl shadow-slate-200 sm:rounded-[3rem] border border-slate-50 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-samu-red via-samu-orange to-azul-ferrete"></div>
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-samu-red via-samu-orange to-samu-blue"></div>
           
           <form className="space-y-8" onSubmit={handleSignup}>
             {error && (
@@ -255,7 +255,7 @@ export const Signup: React.FC = () => {
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as 'servidor' | 'coordenacao')}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-azul-ferrete/10 focus:border-azul-ferrete transition-all appearance-none"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue transition-all appearance-none"
                 >
                   <option value="servidor">Servidor Operacional</option>
                   <option value="coordenacao">Coordenação / Gestão</option>

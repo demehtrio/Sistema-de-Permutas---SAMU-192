@@ -82,7 +82,7 @@ const SystemSignatureButton: React.FC<{ onClick?: () => void; className?: string
     type={type}
     onClick={onClick}
     disabled={loading}
-    className={twMerge(`flex items-center justify-center px-5 py-3 border-none text-xs font-black uppercase tracking-widest rounded-2xl text-white bg-azul-ferrete hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95 disabled:opacity-50`, className)}
+    className={twMerge(`flex items-center justify-center px-5 py-3 border-none text-xs font-black uppercase tracking-widest rounded-2xl text-white bg-samu-blue hover:bg-samu-blue-hover transition-all shadow-xl shadow-slate-200 active:scale-95 disabled:opacity-50`, className)}
   >
     <Check className="w-4 h-4 mr-2" />
     {loading ? 'Processando...' : (label || 'Assinar com Senha')}
@@ -568,7 +568,7 @@ export const Dashboard: React.FC = () => {
                 <SamuLogo className="h-12 w-12 object-contain" />
               </div>
               <div className="flex flex-col">
-                <h1 className="text-xl font-black text-azul-ferrete tracking-tighter leading-none flex items-center">
+                <h1 className="text-xl font-black text-samu-blue tracking-tighter leading-none flex items-center">
                   SISTEMA DE PERMUTAS
                   <span className="ml-2 px-2 py-0.5 bg-samu-red text-white text-[10px] font-black rounded uppercase tracking-widest">v2.0</span>
                 </h1>
@@ -628,7 +628,7 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-12">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h2 className="text-3xl font-black text-azul-ferrete tracking-tighter uppercase">Painel de Controle</h2>
+                <h2 className="text-3xl font-black text-samu-blue tracking-tighter uppercase">Painel de Controle</h2>
                 <p className="text-slate-500 text-sm font-medium">Gerencie suas trocas de plantão com segurança digital.</p>
               </div>
               <button
@@ -825,8 +825,8 @@ export const Dashboard: React.FC = () => {
             <section className="structural-card border-none shadow-[0_4px_20px_rgba(0,0,0,0.03)] text-slate-800">
               <div className="px-6 py-5 bg-white border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="bg-azul-ferrete/5 p-3 rounded-2xl border border-azul-ferrete/10">
-                    <Send className="h-6 w-6 text-azul-ferrete" />
+                  <div className="bg-samu-blue/5 p-3 rounded-2xl border border-samu-blue/10">
+                    <Send className="h-6 w-6 text-samu-blue" />
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">

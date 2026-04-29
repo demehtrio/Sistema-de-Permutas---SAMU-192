@@ -43,10 +43,10 @@ export const Login: React.FC = () => {
           <div className="bg-white p-4 rounded-3xl shadow-xl shadow-slate-200 mb-6 border border-slate-50">
             <SamuLogo className="h-24 w-24 object-contain" />
           </div>
-          <h1 className="text-3xl font-black text-azul-ferrete tracking-tighter uppercase">SAMU 192</h1>
+          <h1 className="text-3xl font-black text-samu-blue tracking-tighter uppercase">SAMU 192</h1>
           <h2 className="text-xs font-black text-samu-orange tracking-[0.3em] uppercase">Serra Talhada • PE</h2>
         </div>
-        <h3 className="mt-8 text-center text-2xl font-black text-azul-ferrete uppercase tracking-tighter">
+        <h3 className="mt-8 text-center text-2xl font-black text-samu-blue uppercase tracking-tighter">
           Acesso Restrito
         </h3>
         <p className="mt-2 text-center text-sm text-slate-500 font-medium tracking-tight">
@@ -59,7 +59,7 @@ export const Login: React.FC = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-10 px-8 shadow-2xl shadow-slate-200 sm:rounded-[2.5rem] border border-slate-50 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-samu-red via-samu-orange to-azul-ferrete"></div>
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-samu-red via-samu-orange to-samu-blue"></div>
           
           <form className="space-y-6" onSubmit={handleLogin}>
             {error && (
