@@ -1,5 +1,5 @@
 {
-  "name": "SAMU 192 Permutas",
-  "description": "Aplicativo para solicitação e assinatura (via GOV.BR) de permutas de plantão entre servidores do SAMU 192.",
+  "name": "SAMU 192 - Sistema de Permutas",
+  "description": "Sistema oficial de permutas do SAMU 192 - Serra Talhada. Gestão completa de trocas de plantão com assinatura eletrônica interna e logo oficial do sistema.",
   "requestFramePermissions": []
 }

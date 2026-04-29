@@ -1,28 +1,16 @@
 {
-  "name": "SAMU Serra Talhada - Permutas",
+  "name": "SAMU 192 - Sistema de Permutas",
   "short_name": "SAMU Permutas",
-  "description": "Sistema de Gestão de Permutas do SAMU Serra Talhada",
+  "description": "Sistema oficial de permutas do SAMU 192 - Serra Talhada",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000080",
-  "theme_color": "#000080",
+  "background_color": "#ffffff",
+  "theme_color": "#E87C00",
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon.svg",
+      "src": "https://i.pinimg.com/originals/cb/b0/f4/cbb0f4c4a7e05d4635ec4c53c6e26baf.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

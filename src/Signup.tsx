@@ -116,167 +116,160 @@ export const Signup: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center flex-col items-center">
-          <div className="bg-white p-2 rounded-full shadow-md mb-4">
-            <SamuLogo className="h-20 w-20 object-contain" />
+        <div className="flex justify-center flex-col items-center text-center">
+          <div className="bg-white p-4 rounded-3xl shadow-xl shadow-slate-200 mb-6 border border-slate-50">
+            <SamuLogo className="h-24 w-24 object-contain" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">SAMU 192</h1>
-          <h2 className="text-sm font-semibold text-orange-600 tracking-wider">BASE SERRA TALHADA</h2>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">SAMU 192</h1>
+          <h2 className="text-xs font-black text-samu-orange tracking-[0.3em] uppercase">Cadastro de Colaborador</h2>
         </div>
-        <h3 className="mt-6 text-center text-2xl font-extrabold text-gray-900">
-          Cadastro de Funcionário
-        </h3>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-8 text-center text-sm text-slate-500 font-medium tracking-tight">
           Ou{' '}
-          <Link to="/login" className="font-medium text-orange-600 hover:text-orange-500">
+          <Link to="/login" className="font-bold text-azul-ferrete hover:text-azul-ferrete-hover transition-colors underline underline-offset-4 decoration-2">
             faça login na sua conta existente
           </Link>
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSignup}>
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
+        <div className="bg-white py-12 px-10 shadow-2xl shadow-slate-200 sm:rounded-[3rem] border border-slate-50 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-samu-red via-samu-orange to-azul-ferrete"></div>
+          
+          <form className="space-y-8" onSubmit={handleSignup}>
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-                {error}
+              <div className="bg-red-50 border border-red-100 text-red-600 px-6 py-4 rounded-2xl text-xs font-bold shadow-sm">
+                ⚠️ {error}
               </div>
             )}
             {success && (
-              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md text-sm">
-                {success}
+              <div className="bg-green-50 border border-green-100 text-green-600 px-6 py-4 rounded-2xl text-xs font-bold shadow-sm">
+                ✅ {success}
               </div>
             )}
-            <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nome Completo</label>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                  />
-                </div>
+            
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange transition-all placeholder:text-slate-300"
+                  placeholder="Nome e Sobrenome"
+                />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <div className="mt-1">
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">CPF</label>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    required
-                    value={cpf}
-                    onChange={(e) => setCpf(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">CRM / COREN /  MATRÍCULA</label>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    required
-                    value={coren}
-                    onChange={(e) => setCoren(e.target.value)}
-                    placeholder="ex.: COREN 00000"
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                  />
-                </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Institucional</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange transition-all placeholder:text-slate-300"
+                  placeholder="seuemail@exemplo.com"
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Cargo</label>
-                <div className="mt-1">
-                  <select
-                    required
-                    value={cargo}
-                    onChange={(e) => setCargo(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                  >
-                    <option value="">Selecione seu cargo...</option>
-                    {SAMU_ROLES.map(role => (
-                      <option key={role} value={role}>{role}</option>
-                    ))}
-                  </select>
-                </div>
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CPF</label>
+                <input
+                  type="text"
+                  required
+                  value={cpf}
+                  onChange={(e) => setCpf(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange transition-all placeholder:text-slate-300"
+                  placeholder="000.000.000-00"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">CRM / COREN / MATRÍCULA</label>
+                <input
+                  type="text"
+                  required
+                  value={coren}
+                  onChange={(e) => setCoren(e.target.value)}
+                  placeholder="Ex: COREN 12345"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange transition-all placeholder:text-slate-300"
+                />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Base</label>
-              <div className="mt-1">
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cargo / Função</label>
+                <select
+                  required
+                  value={cargo}
+                  onChange={(e) => setCargo(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange transition-all appearance-none"
+                >
+                  <option value="">Selecione sua função...</option>
+                  {SAMU_ROLES.map(role => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Base de Atuação</label>
                 <input
                   type="text"
                   required
                   value={base}
                   onChange={(e) => setBase(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange transition-all placeholder:text-slate-300"
+                  placeholder="Ex: Serra Talhada"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Senha</label>
-              <div className="mt-1 relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Senha de Acesso</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange transition-all placeholder:text-slate-300 pr-12"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-samu-orange transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Tipo de Conta</label>
-              <div className="mt-1">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Perfil</label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as 'servidor' | 'coordenacao')}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-azul-ferrete/10 focus:border-azul-ferrete transition-all appearance-none"
                 >
-                  <option value="servidor">Servidor (Socorrista/Técnico/etc)</option>
-                  <option value="coordenacao">Coordenação / Administrativo</option>
+                  <option value="servidor">Servidor Operacional</option>
+                  <option value="coordenacao">Coordenação / Gestão</option>
                 </select>
               </div>
             </div>
 
-            <div>
+            <div className="pt-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 transition-colors"
+                className="w-full flex justify-center py-5 px-4 border border-transparent rounded-2xl shadow-xl shadow-samu-orange/20 text-xs font-black uppercase tracking-[0.2em] text-white bg-samu-orange hover:bg-samu-orange-light focus:outline-none focus:ring-4 focus:ring-samu-orange/20 disabled:opacity-50 transition-all active:scale-[0.98]"
               >
-                {loading ? 'Cadastrando...' : 'Cadastrar'}
+                {loading ? 'Processando Cadastro...' : 'Finalizar Cadastro'}
               </button>
             </div>
           </form>

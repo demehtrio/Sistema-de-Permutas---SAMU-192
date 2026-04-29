@@ -40,74 +40,81 @@ export const Login: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center flex-col items-center">
-          <div className="bg-white p-2 rounded-full shadow-md mb-4">
-            <SamuLogo className="h-20 w-20 object-contain" />
+          <div className="bg-white p-4 rounded-3xl shadow-xl shadow-slate-200 mb-6 border border-slate-50">
+            <SamuLogo className="h-24 w-24 object-contain" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">SAMU 192</h1>
-          <h2 className="text-sm font-semibold text-orange-600 tracking-wider">BASE SERRA TALHADA</h2>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">SAMU 192</h1>
+          <h2 className="text-xs font-black text-samu-orange tracking-[0.3em] uppercase">Serra Talhada • PE</h2>
         </div>
-        <h3 className="mt-6 text-center text-2xl font-extrabold text-gray-900">
-          Acesso ao Sistema
+        <h3 className="mt-8 text-center text-2xl font-black text-slate-900 uppercase tracking-tighter">
+          Acesso Restrito
         </h3>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-slate-500 font-medium tracking-tight">
           Ou{' '}
-          <Link to="/signup" className="font-medium text-orange-600 hover:text-orange-500">
+          <Link to="/signup" className="font-bold text-samu-orange hover:text-samu-orange-light transition-colors underline underline-offset-4 decoration-2">
             cadastre-se como novo funcionário
           </Link>
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white py-10 px-8 shadow-2xl shadow-slate-200 sm:rounded-[2.5rem] border border-slate-50 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-samu-red via-samu-orange to-azul-ferrete"></div>
+          
           <form className="space-y-6" onSubmit={handleLogin}>
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+              <div className="bg-red-50 border border-red-100 text-red-600 px-5 py-4 rounded-2xl text-xs font-bold flex items-start">
+                <span className="mr-2">⚠️</span>
                 {error}
               </div>
             )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
-              <div className="mt-1">
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Endereço de Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange transition-all placeholder:text-slate-300"
+                placeholder="nome@samu.gov.br"
+              />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Senha</label>
-              <div className="mt-1 relative">
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Senha de Acesso</label>
+              <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm pr-10"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange transition-all placeholder:text-slate-300 pr-12"
+                  placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-samu-orange transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
-            <div>
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 transition-colors"
+                className="w-full flex justify-center py-5 px-4 border border-transparent rounded-2xl shadow-xl shadow-samu-orange/20 text-xs font-black uppercase tracking-[0.2em] text-white bg-samu-orange hover:bg-samu-orange-light focus:outline-none focus:ring-4 focus:ring-samu-orange/20 disabled:opacity-50 transition-all active:scale-[0.98]"
               >
-                {loading ? 'Entrando...' : 'Entrar'}
+                {loading ? 'Validando Credenciais...' : 'Entrar no Sistema'}
               </button>
             </div>
           </form>
+        </div>
+        
+        <div className="mt-10 text-center">
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">Tecnologia SAMU 192</p>
         </div>
       </div>
     </div>

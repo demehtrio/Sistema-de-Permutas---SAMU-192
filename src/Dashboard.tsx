@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<{ children: React.ReactNode }, { ha
             <p className="text-gray-600 mb-6">{errorMessage}</p>
             <button
               onClick={() => window.location.reload()}
-              className="w-full bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition-colors"
+              className="w-full bg-samu-orange text-white py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-samu-orange-light transition-all shadow-lg shadow-samu-orange/20 active:scale-95"
             >
               Recarregar Aplicativo
             </button>
@@ -77,26 +77,15 @@ export class ErrorBoundary extends Component<{ children: React.ReactNode }, { ha
   }
 }
 
-const GovBrButton: React.FC<{ onClick?: () => void; className?: string; label?: string }> = ({ onClick, className, label }) => (
-  <button
-    type="button"
-    onClick={onClick || (() => window.open('https://assinador.iti.br/', '_blank'))}
-    className={twMerge(`flex items-center justify-center px-4 py-2 border border-transparent text-sm font-bold rounded-md text-white bg-[#004184] hover:bg-[#003164] transition-all shadow-md hover:shadow-lg active:scale-95`, className)}
-  >
-    <img src="https://www.gov.br/favicon.ico" className="w-5 h-5 mr-2" alt="Gov.br" />
-    {label || 'Assinar via GOV.BR'}
-  </button>
-);
-
 const SystemSignatureButton: React.FC<{ onClick?: () => void; className?: string; label?: string; loading?: boolean; type?: "button" | "submit" }> = ({ onClick, className, label, loading, type = "button" }) => (
   <button
     type={type}
     onClick={onClick}
     disabled={loading}
-    className={twMerge(`flex items-center justify-center px-4 py-2 border-2 border-orange-600 text-sm font-bold rounded-md text-orange-600 bg-white hover:bg-orange-50 transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50`, className)}
+    className={twMerge(`flex items-center justify-center px-5 py-3 border-none text-xs font-black uppercase tracking-widest rounded-2xl text-white bg-azul-ferrete hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95 disabled:opacity-50`, className)}
   >
-    <Check className="w-5 h-5 mr-2" />
-    {loading ? 'Assinando...' : (label || 'Assinar com Senha do Sistema')}
+    <Check className="w-4 h-4 mr-2" />
+    {loading ? 'Processando...' : (label || 'Assinar com Senha')}
   </button>
 );
 
@@ -811,13 +800,6 @@ export const Dashboard: React.FC = () => {
                                     </button>
                                   </>
                                 )}
-                                <button 
-                                  onClick={() => window.open('https://assinador.iti.br/', '_blank')}
-                                  className="p-1.5 text-white bg-[#004184] hover:bg-[#003164] rounded-full shadow-sm transition-colors"
-                                  title="Assinar Digitalmente (GOV.BR)"
-                                >
-                                  <img src="https://www.gov.br/favicon.ico" className="h-4 w-4" alt="Gov.br" />
-                                </button>
                                 {profile?.role === 'coordenacao' && (
                                   <button 
                                     onClick={() => handleDeletePermuta(p.id)} 
@@ -905,13 +887,6 @@ export const Dashboard: React.FC = () => {
                                   </button>
                                 </>
                               )}
-                              <button 
-                                onClick={() => window.open('https://assinador.iti.br/', '_blank')}
-                                className="p-1.5 text-white bg-[#004184] hover:bg-[#003164] rounded-full shadow-sm transition-colors"
-                                title="Assinar Digitalmente (GOV.BR)"
-                              >
-                                <img src="https://www.gov.br/favicon.ico" className="h-4 w-4" alt="Gov.br" />
-                              </button>
                               {profile?.role === 'coordenacao' && (
                                 <button 
                                   onClick={() => handleDeletePermuta(p.id)} 
@@ -1067,20 +1042,16 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
               
-              <div className="mt-6 space-y-4">
-                <div className="grid grid-cols-1 gap-3">
-                  <GovBrButton className="w-full py-3" />
-                  
-                  <div className="relative py-2">
-                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                      <div className="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase font-bold">
-                      <span className="px-2 bg-white text-gray-400">Ou Assinatura Interna</span>
+              <div className="mt-6">
+                <div className="space-y-4">
+                  <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status da Assinatura</p>
+                      <p className="text-xs font-bold text-slate-700">Aguardando sua senha para validar o documento</p>
                     </div>
                   </div>
 
-                  <form onSubmit={confirmSign} className="space-y-3">
+                  <form onSubmit={confirmSign} className="space-y-4">
                     {signingError && (
                       <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
                         {signingError}
@@ -1448,26 +1419,23 @@ const CreatePermuta: React.FC<{ onCancel: () => void, onSuccess?: () => void }> 
             <button
               type="button"
               onClick={onCancel}
-              className="w-full sm:w-auto bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              className="w-full sm:w-auto bg-slate-100 py-3 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-200 transition-all active:scale-95"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleSavePDF}
-              className="w-full sm:w-auto bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 flex items-center justify-center"
+              className="w-full sm:w-auto bg-white py-3 px-6 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all border-dashed flex items-center justify-center active:scale-95"
             >
               <FileText className="w-4 h-4 mr-2" />
-              Salvar em PDF
+              Ver Prévia PDF
             </button>
-            <GovBrButton 
-              className="w-full sm:w-auto" 
-            />
             <SystemSignatureButton 
               type="submit"
               loading={loading}
-              className="w-full sm:w-auto bg-orange-600 text-white hover:bg-orange-700 border-none"
-              label={loading ? 'Enviando...' : 'Assinar e Enviar'}
+              className="w-full sm:w-auto"
+              label={loading ? 'Sincronizando...' : 'Finalizar e Enviar'}
             />
           </div>
         </form>

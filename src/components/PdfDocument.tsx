@@ -77,56 +77,55 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
 
         {/* Signatures */}
         <div className="grid grid-cols-2 gap-12 mt-12">
-          {/* Solicitante Signature */}
-          <div className="text-center flex flex-col items-center">
+                 <div className="text-center flex flex-col items-center">
             {data.assinaturaSolicitante ? (
-              <div className="border border-blue-800 rounded p-2 mb-2 w-full text-left text-xs bg-blue-50/50 relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-blue-800 text-white px-2 py-0.5 text-[10px] font-bold rounded-bl">
-                  gov.br
+              <div className="border border-slate-800 rounded p-2 mb-2 w-full text-left text-xs bg-slate-50/50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-slate-800 text-white px-2 py-0.5 text-[8px] font-black rounded-bl uppercase">
+                  SISTEMA SAMU
                 </div>
-                <p className="font-bold text-blue-900 mt-2">Assinatura Eletrônica</p>
-                <p className="text-gray-700 mt-1"><strong>Nome:</strong> {data.solicitanteNome}</p>
-                <p className="text-gray-700"><strong>CPF:</strong> ***.{data.assinaturaSolicitante.cpf.substring(4, 7)}.{data.assinaturaSolicitante.cpf.substring(8, 11)}-**</p>
-                <p className="text-gray-700"><strong>Data:</strong> {data.assinaturaSolicitante.timestamp}</p>
+                <p className="font-black text-slate-900 mt-2 uppercase tracking-tighter">Assinatura Eletrônica</p>
+                <p className="text-slate-700 mt-1"><strong>NOME:</strong> {data.solicitanteName.toUpperCase()}</p>
+                <p className="text-slate-700"><strong>CPF:</strong> ***.{data.assinaturaSolicitante.cpf.substring(4, 7)}.{data.assinaturaSolicitante.cpf.substring(8, 11)}-**</p>
+                <p className="text-slate-700"><strong>DATA:</strong> {data.assinaturaSolicitante.timestamp}</p>
               </div>
             ) : (
               <div className="w-full border-b border-black mb-2 h-16"></div>
             )}
-            <p className="font-bold">{data.solicitanteNome || 'Assinatura do Solicitante'}</p>
-            <p className="text-sm text-gray-600">CRM / COREN /  MATRÍCULA: {data.solicitanteCoren}</p>
+            <p className="font-bold">{data.solicitanteName || 'Assinatura do Solicitante'}</p>
+            <p className="text-sm text-gray-600"> {data.solicitanteCargo} / COREN: {data.solicitanteCoren}</p>
           </div>
 
           {/* Substituto Signature */}
           <div className="text-center flex flex-col items-center">
             {data.assinaturaSubstituto ? (
-              <div className="border border-blue-800 rounded p-2 mb-2 w-full text-left text-xs bg-blue-50/50 relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-blue-800 text-white px-2 py-0.5 text-[10px] font-bold rounded-bl">
-                  gov.br
+              <div className="border border-slate-800 rounded p-2 mb-2 w-full text-left text-xs bg-slate-50/50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-slate-800 text-white px-2 py-0.5 text-[8px] font-black rounded-bl uppercase">
+                  SISTEMA SAMU
                 </div>
-                <p className="font-bold text-blue-900 mt-2">Assinatura Eletrônica</p>
-                <p className="text-gray-700 mt-1"><strong>Nome:</strong> {data.substitutoNome}</p>
-                <p className="text-gray-700"><strong>CPF:</strong> ***.{data.assinaturaSubstituto.cpf.substring(4, 7)}.{data.assinaturaSubstituto.cpf.substring(8, 11)}-**</p>
-                <p className="text-gray-700"><strong>Data:</strong> {data.assinaturaSubstituto.timestamp}</p>
+                <p className="font-black text-slate-900 mt-2 uppercase tracking-tighter">Assinatura Eletrônica</p>
+                <p className="text-slate-700 mt-1"><strong>NOME:</strong> {data.substitutoName.toUpperCase()}</p>
+                <p className="text-slate-700"><strong>CPF:</strong> ***.{data.assinaturaSubstituto.cpf.substring(4, 7)}.{data.assinaturaSubstituto.cpf.substring(8, 11)}-**</p>
+                <p className="text-slate-700"><strong>DATA:</strong> {data.assinaturaSubstituto.timestamp}</p>
               </div>
             ) : (
               <div className="w-full border-b border-black mb-2 h-16"></div>
             )}
-            <p className="font-bold">{data.substitutoNome || 'Assinatura do Substituto'}</p>
-            <p className="text-sm text-gray-600">CRM / COREN /  MATRÍCULA: {data.substitutoCoren}</p>
+            <p className="font-bold">{data.substitutoName || 'Assinatura do Substituto'}</p>
+            <p className="text-sm text-gray-600"> {data.substitutoCargo} / COREN: {data.substitutoCoren}</p>
           </div>
         </div>
 
         {/* Coordenacao Signature */}
         <div className="mt-24 text-center flex flex-col items-center w-1/2 mx-auto">
           {data.assinaturaCoordenacao ? (
-              <div className="border border-blue-800 rounded p-2 mb-2 w-full text-left text-xs bg-blue-50/50 relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-blue-800 text-white px-2 py-0.5 text-[10px] font-bold rounded-bl">
-                  gov.br
+              <div className="border border-slate-800 rounded p-2 mb-2 w-full text-left text-xs bg-slate-50/50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-slate-800 text-white px-2 py-0.5 text-[8px] font-black rounded-bl uppercase">
+                  SISTEMA SAMU
                 </div>
-                <p className="font-bold text-blue-900 mt-2">Assinatura Eletrônica - DEFERIDO</p>
-                <p className="text-gray-700 mt-1"><strong>Coordenação SAMU 192</strong></p>
-                <p className="text-gray-700"><strong>CPF:</strong> ***.{data.assinaturaCoordenacao.cpf.substring(4, 7)}.{data.assinaturaCoordenacao.cpf.substring(8, 11)}-**</p>
-                <p className="text-gray-700"><strong>Data:</strong> {data.assinaturaCoordenacao.timestamp}</p>
+                <p className="font-black text-slate-900 mt-2 uppercase tracking-tighter">Assinatura Eletrônica - DEFERIDO</p>
+                <p className="text-slate-700 mt-1 font-bold">Coordenação SAMU 192 - Serra Talhada</p>
+                <p className="text-slate-700"><strong>CPF:</strong> ***.{data.assinaturaCoordenacao.cpf.substring(4, 7)}.{data.assinaturaCoordenacao.cpf.substring(8, 11)}-**</p>
+                <p className="text-slate-700"><strong>DATA:</strong> {data.assinaturaCoordenacao.timestamp}</p>
               </div>
             ) : (
               <div className="w-full border-b border-black mb-2 h-16"></div>
@@ -138,7 +137,7 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
         {/* Footer */}
         <div className="mt-16 pt-4 border-t border-gray-300 text-center text-xs text-gray-500">
           <p>Documento gerado eletronicamente pelo Sistema de Permutas SAMU 192.</p>
-          {(data.assinaturaSolicitante || data.assinaturaSubstituto || data.assinaturaCoordenacao) && <p>Autenticidade verificável através do portal gov.br.</p>}
+          {(data.assinaturaSolicitante || data.assinaturaSubstituto || data.assinaturaCoordenacao) && <p>Autenticidade vinculada ao registro interno do servidor.</p>}
         </div>
       </div>
     );
