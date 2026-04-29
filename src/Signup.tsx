@@ -120,7 +120,7 @@ export const Signup: React.FC = () => {
           <div className="bg-white p-4 rounded-3xl shadow-xl shadow-slate-200 mb-6 border border-slate-50">
             <SamuLogo className="h-24 w-24 object-contain" />
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">SAMU 192</h1>
+          <h1 className="text-3xl font-black text-azul-ferrete tracking-tighter uppercase">SAMU 192</h1>
           <h2 className="text-xs font-black text-samu-orange tracking-[0.3em] uppercase">Cadastro de Colaborador</h2>
         </div>
         <p className="mt-8 text-center text-sm text-slate-500 font-medium tracking-tight">

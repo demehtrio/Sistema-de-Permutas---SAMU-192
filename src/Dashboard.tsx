@@ -568,7 +568,7 @@ export const Dashboard: React.FC = () => {
                 <SamuLogo className="h-12 w-12 object-contain" />
               </div>
               <div className="flex flex-col">
-                <h1 className="text-xl font-black text-slate-900 tracking-tighter leading-none flex items-center">
+                <h1 className="text-xl font-black text-azul-ferrete tracking-tighter leading-none flex items-center">
                   SISTEMA DE PERMUTAS
                   <span className="ml-2 px-2 py-0.5 bg-samu-red text-white text-[10px] font-black rounded uppercase tracking-widest">v2.0</span>
                 </h1>
@@ -628,7 +628,7 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-12">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Painel de Controle</h2>
+                <h2 className="text-3xl font-black text-azul-ferrete tracking-tighter uppercase">Painel de Controle</h2>
                 <p className="text-slate-500 text-sm font-medium">Gerencie suas trocas de plantão com segurança digital.</p>
               </div>
               <button

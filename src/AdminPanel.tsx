@@ -84,7 +84,7 @@ export const AdminPanel: React.FC = () => {
         <div className="bg-red-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-red-100 shadow-xl shadow-red-50">
            <ShieldAlert className="h-10 w-10 text-samu-red" />
         </div>
-        <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Acesso Restrito</h2>
+        <h2 className="text-xl font-black text-azul-ferrete uppercase tracking-tighter mb-2">Acesso Restrito</h2>
         <p className="text-slate-500 font-medium max-w-xs mx-auto">Você não tem permissões de coordenação para acessar esta ferramenta.</p>
       </div>
     );

@@ -84,14 +84,14 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
                   SISTEMA SAMU
                 </div>
                 <p className="font-black text-slate-900 mt-2 uppercase tracking-tighter">Assinatura Eletrônica</p>
-                <p className="text-slate-700 mt-1"><strong>NOME:</strong> {data.solicitanteName.toUpperCase()}</p>
+                <p className="text-slate-700 mt-1"><strong>NOME:</strong> {data.solicitanteNome?.toUpperCase()}</p>
                 <p className="text-slate-700"><strong>CPF:</strong> ***.{data.assinaturaSolicitante.cpf.substring(4, 7)}.{data.assinaturaSolicitante.cpf.substring(8, 11)}-**</p>
                 <p className="text-slate-700"><strong>DATA:</strong> {data.assinaturaSolicitante.timestamp}</p>
               </div>
             ) : (
               <div className="w-full border-b border-black mb-2 h-16"></div>
             )}
-            <p className="font-bold">{data.solicitanteName || 'Assinatura do Solicitante'}</p>
+            <p className="font-bold">{data.solicitanteNome || 'Assinatura do Solicitante'}</p>
             <p className="text-sm text-gray-600"> {data.solicitanteCargo} / COREN: {data.solicitanteCoren}</p>
           </div>
 
@@ -103,14 +103,14 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
                   SISTEMA SAMU
                 </div>
                 <p className="font-black text-slate-900 mt-2 uppercase tracking-tighter">Assinatura Eletrônica</p>
-                <p className="text-slate-700 mt-1"><strong>NOME:</strong> {data.substitutoName.toUpperCase()}</p>
+                <p className="text-slate-700 mt-1"><strong>NOME:</strong> {data.substitutoNome?.toUpperCase()}</p>
                 <p className="text-slate-700"><strong>CPF:</strong> ***.{data.assinaturaSubstituto.cpf.substring(4, 7)}.{data.assinaturaSubstituto.cpf.substring(8, 11)}-**</p>
                 <p className="text-slate-700"><strong>DATA:</strong> {data.assinaturaSubstituto.timestamp}</p>
               </div>
             ) : (
               <div className="w-full border-b border-black mb-2 h-16"></div>
             )}
-            <p className="font-bold">{data.substitutoName || 'Assinatura do Substituto'}</p>
+            <p className="font-bold">{data.substitutoNome || 'Assinatura do Substituto'}</p>
             <p className="text-sm text-gray-600"> {data.substitutoCargo} / COREN: {data.substitutoCoren}</p>
           </div>
         </div>
